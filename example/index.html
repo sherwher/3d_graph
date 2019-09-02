@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        .node {
+            opacity: 0.5;
+        }
+
+        .node:hover {
+            opacity: 1;
+        }
+
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.3;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="js/sample.js" charset="utf-8"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script>
+        sample.addNode({
+            "name": "Myriel",
+            "group": 1
+        })
+        sample.addNode({
+            "name": "Myriel2",
+            "group": 1
+        })
+        sample.addNode({
+            "name": "Myriel3",
+            "group": 1
+        })
+
+        setTimeout(() => {
+            sample.addNode({
+                "name": "Myriel4",
+                "group": 1
+            })
+            setTimeout(() => {
+                sample.removeNode("Myriel2")
+            }, 5000)
+        }, 5000)
+
+
+    </script>
+</body>
+
+</html>
