@@ -27,28 +27,24 @@
     <script src="js/sample.js" charset="utf-8"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script>
-        sample.addNode({
-            "name": "Myriel",
-            "group": 1
-        })
-        sample.addNode({
-            "name": "Myriel2",
-            "group": 1
-        })
-        sample.addNode({
-            "name": "Myriel3",
-            "group": 1
-        })
-
-        setTimeout(() => {
+        for (var i = 0; i < 200; i++) {
             sample.addNode({
-                "name": "Myriel4",
+                "name": i,
                 "group": 1
             })
+        }
+        sample.keepNodesOnTop()
+        setTimeout(() => {
+            sample.addLink("0", "1", "1")
+            sample.addLink("0", "12", "1")
+            sample.addLink("0", "17", "1")
+            sample.addLink("0", "30", "1")
+            sample.keepNodesOnTop()
             setTimeout(() => {
-                sample.removeNode("Myriel2")
+                sample.removeallLinks()
+                sample.keepNodesOnTop()
             }, 5000)
-        }, 5000)
+        }, 3000)
 
 
     </script>

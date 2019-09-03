@@ -7,15 +7,14 @@ function sampleClass() {
     var color = d3.scale.category10();
     function colorByGroup(d) { return color(group(d)); }
 
-    var width = 960,
-        height = 500;
+    var width = window.innerHeight,
+        height = window.innerHeight;
 
     var svg = d3.select('body')
         .append('svg')
         .attr('width', width)
         .attr('height', height);
 
-    var node, link;
 
     var voronoi = d3.geom.voronoi()
         .x(function (d) { return d.x; })
@@ -37,9 +36,9 @@ function sampleClass() {
     }
 
     var force = d3.layout.force()
-        .charge(-2000)
-        .friction(0.3)
-        .linkDistance(50)
+        .charge(-300)
+        .friction(0.2)
+        .linkDistance(200)
         .size([width, height]);
 
 
@@ -55,7 +54,6 @@ function sampleClass() {
     this.removeNode = function (id) {
         var i = 0;
         var n = findNode(id);
-        console.log(nodes.length)
         while (i < links.length) {
             if ((links[i]['source'] == n) || (links[i]['target'] == n)) {
                 links.splice(i, 1);
@@ -63,45 +61,86 @@ function sampleClass() {
             else i++;
         }
         nodes.splice(findNodeIndex(id), 1);
-        console.log(nodes.length)
         this.update();
     };
 
     var findNode = function (id) {
         for (var i in nodes) {
-            if (nodes[i]["name"] === id) return nodes[i];
+            if (nodes[i]["id"] == id) {
+                return nodes[i];
+            }
         };
     };
 
     var findNodeIndex = function (id) {
         for (var i = 0; i < nodes.length; i++) {
-            console.log(nodes[i].name)
-            if (nodes[i].name == id) {
+            if (nodes[i].id == id) {
                 return i;
             }
         };
+    };
+    var selectedSource = null;
+    var selectedTarget = null;
+    this.addLink = function (source, target, value) {
+        console.log(source + " : " + target)
+        selectedSource = findNode(source);
+        selectedTarget = findNode(target);
+        $("#round" + selectedSource.id).attr("fill", "#ff0000").attr('r', 14)
+        $("#round" + selectedTarget.id).attr("fill", "#0000ff").attr('r', 14)
+        links.push({ "source": selectedSource, "target": selectedTarget, "value": value });
+        this.update();
+    };
+
+    this.removeLink = function (source, target) {
+        for (var i = 0; i < links.length; i++) {
+            if (links[i].source.id == source && links[i].target.id == target) {
+                links.splice(i, 1);
+                break;
+            }
+        }
+        this.update();
+    };
+
+    this.removeallLinks = function () {
+        $(".nodeStrokeClass").each(function (index) {
+            $(this).attr("fill", "#00ff00").attr('r', 10)
+        });
+        links.splice(0, links.length);
+        this.update();
+    };
+
+    this.removeAllNodes = function () {
+        nodes.splice(0, nodes.length);
+        this.update();
     };
 
     this.update = function () {
 
         nodes.forEach(function (d, i) {
-            d.id = i;
+            d.id = d.name;
         });
 
-        link = svg.selectAll('.link')
-            .data(links)
-            .enter().append('line')
-            .attr('class', 'link')
-            .style("stroke-width", function (d) {
-                return Math.sqrt(d.value);
+        var link = svg.selectAll("line")
+            .data(links, function (d) {
+
+                return d.source.name + "-" + d.target.name;
             });
 
-        // node = svg.selectAll('.node')
-        //     .data(nodes)
-        //     .enter().append('g')
-        //     .attr('title', name)
-        //     .attr('class', 'node')
-        //     .call(force.drag);
+        link.enter().append("line")
+            .attr("id", function (d) {
+                return d.source.name + "-" + d.target.name;
+            })
+            .style("stroke-width", function (d) {
+                return Math.sqrt(d.value);
+            })
+            .attr("class", "link");
+
+        link.append("title")
+            .text(function (d) {
+                return d.value;
+            });
+
+        link.exit().remove();
 
         var node = svg.selectAll("g.node")
             .data(nodes, function (d) {
@@ -110,16 +149,32 @@ function sampleClass() {
 
         var nodeEnter = node.enter().append("g")
             .attr("class", "node")
+            .attr('title', name)
             .call(force.drag);
 
         nodeEnter.append('svg:circle')
-            .attr('r', 30)
-            .attr('fill', colorByGroup)
+            .attr('r', 10)
+            .attr('fill', "#00ff00")
+            .attr('id', function (d) {
+                return "round" + d.id;
+            })
+            .attr("class", "nodeStrokeClass")
             .attr('fill-opacity', 0.5);
 
         nodeEnter.append('svg:circle')
-            .attr('r', 4)
+            .attr('id', function (d) {
+                return "inner" + d.id;
+            })
+            .attr('r', 2)
             .attr('stroke', 'black');
+
+        nodeEnter.append("svg:text")
+            .attr("class", "textClass")
+            .attr("x", 14)
+            .attr("y", ".31em")
+            .text(function (d, i) {
+                return i;
+            });
 
         node.exit().remove();
 
@@ -144,12 +199,18 @@ function sampleClass() {
             clip.append('path')
                 .attr('d', function (d) { return 'M' + d.join(',') + 'Z'; });
         });
-
         force
             .start();
     }
 
     this.update();
+
+    this.keepNodesOnTop = function () {
+        $(".nodeStrokeClass").each(function (index) {
+            var gnode = this.parentNode;
+            gnode.parentNode.appendChild(gnode);
+        });
+    }
 }
 
 this.sample = new sampleClass()
