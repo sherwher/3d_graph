@@ -54,13 +54,13 @@
     <script>
         var data = graph.getGraphData();
         data.nodes = [
-            { "name": 1 },
-            { "name": 2 },
-            { "name": 3 },
-            { "name": 4 },
-            { "name": 5 },
-            { "name": 6 },
-            { "name": 7 },
+            { "name": 1, "source": false, "target": false },
+            { "name": 2, "source": false, "target": false },
+            { "name": 3, "source": false, "target": false },
+            { "name": 4, "source": false, "target": false },
+            { "name": 5, "source": false, "target": false },
+            { "name": 6, "source": false, "target": false },
+            { "name": 7, "source": false, "target": false },
         ];
         data.links = [
             {
@@ -75,11 +75,11 @@
         graph.setGraphData(data);
 
         setTimeout(() => {
-            graph.addNode({ "name": 8 })
+            graph.addNode({ "name": 8, "source": false, "target": false })
         }, 3000)
 
         setTimeout(() => {
-            graph.addNode({ "name": 9 })
+            graph.addNode({ "name": 9, "source": false, "target": false })
         }, 6000)
 
         setTimeout(() => {

@@ -12,15 +12,28 @@ function nodeGraph() {
         target: new Map()
     }
 
+    function findNode(id) {
+        var index;
+        this.data.nodes.forEach(function (v, i) {
+            if (v.name = id) {
+                index = i;
+            }
+        })
+        return index;
+    }
+
+    function clearNodeSourceAndTarget() {
+        this.data.nodes.forEach(function (v) {
+            v.source = null;
+            v.target = null;
+        });
+    }
+
     this.getGraphData = function () {
         return this.data;
     }
     this.setGraphData = function (data) {
         this.data = data;
-        this.data.links.forEach((v, i) => {
-            this.data.source.set(v.source, v.source);
-            this.data.target.set(v.target, v.target);
-        })
         update(this.data);
         keepNodesOnTop();
     }
@@ -32,11 +45,6 @@ function nodeGraph() {
     this.addLink = function (link) {
         this.data.links = [];
         this.data.links.push(link);
-        this.data.source.clear();
-        this.data.target.clear();
-        this.data.source.set(link.source, link.source);
-        this.data.target.set(link.target, link.target);
-        console.log(this.data)
         update(this.data);
         keepNodesOnTop();
     }
@@ -120,23 +128,11 @@ function nodeGraph() {
 
         nodeEnter.append('svg:circle')
             .attr('r', function (d) {
-                console.log("r");
-                console.log(data)
-                if (data.source.get(d.id) != null || data.target.get(d.id) != null) {
-                    return 15;
-                }
+
                 return 10;
             })
             .attr('fill', function (d) {
-                if (data.source.get(d.id) != null && data.target.get(d.id) != null) {
-                    return "#00ffff";
-                } else if (data.source.get(d.id) != null && data.target.get(d.id) == null) {
-                    return "#00ff00";
-                } else if (data.source.get(d.id) != null && data.target.get(d.id) != null) {
-                    return "#ff0000";
-                } else {
-                    return "#00ff00"
-                }
+                return "#ff0000";
             })
             .attr('id', function (d) {
                 return "round" + d.id;
