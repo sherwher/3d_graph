@@ -7,8 +7,8 @@ function sampleClass() {
     var color = d3.scale.category10();
     function colorByGroup(d) { return color(group(d)); }
 
-    var width = window.innerHeight,
-        height = window.innerHeight;
+    var width = window.innerHeight - 20,
+        height = window.innerHeight - 20;
 
     var svg = d3.select('body')
         .append('svg')
@@ -35,18 +35,22 @@ function sampleClass() {
         return shapes;
     }
 
+    var charge = 0.317 * height;
+    var distance = 0.211 * height;
+
     var force = d3.layout.force()
-        .charge(-300)
+        .charge(-1 * charge)
         .friction(0.2)
-        .linkDistance(200)
+        .linkDistance(distance)
         .size([width, height]);
-
-
 
     var nodes = force.nodes();
     var links = force.links();
 
     this.addNode = function (node) {
+        if (node.txs == null) {
+            node.txs = [];
+        }
         nodes.push(node);
         this.update();
     };
@@ -81,13 +85,52 @@ function sampleClass() {
     };
     var selectedSource = null;
     var selectedTarget = null;
-    this.addLink = function (source, target, value) {
-        console.log(source + " : " + target)
+    var minTx = 0;
+    var maxTx = 0;
+
+
+    function addLinkHighlight(source, target, tx) {
+
+        $("#round" + selectedSource.id)
+            .attr("fill", "#ff0000")
+            .attr('r', 15)
+        // $("#rect_back" + selectedSource.id)
+        //     .attr('visibility', 'visible')
+        // $("#rect_state" + selectedSource.id)
+        //     .attr('visibility', 'visible')
+        //     .attr("x", pushTx)
+
+        $("#round" + selectedTarget.id)
+            .attr("fill", "#0000ff")
+            .attr('r', 15)
+        // $("#rect_back" + selectedTarget.id)
+        //     .attr('visibility', 'visible')
+        // $("#rect_state" + selectedTarget.id)
+        //     .attr('visibility', 'visible')
+        //     .attr("x", pushTx)
+    }
+
+    this.addLink = function (source, target, tx) {
         selectedSource = findNode(source);
         selectedTarget = findNode(target);
-        $("#round" + selectedSource.id).attr("fill", "#ff0000").attr('r', 14)
-        $("#round" + selectedTarget.id).attr("fill", "#0000ff").attr('r', 14)
-        links.push({ "source": selectedSource, "target": selectedTarget, "value": value });
+
+        if (tx <= minTx) {
+            minTx = tx;
+            if (maxTx <= minTx) {
+                maxTx = minTx + 1;
+            }
+        }
+
+        if (tx > maxTx) {
+            maxTx = tx;
+        }
+
+        selectedSource.txs.push(tx);
+        selectedTarget.txs.push(tx);
+
+        console.log(selectedSource)
+        addLinkHighlight(source, target, tx);
+        links.push({ "source": selectedSource, "target": selectedTarget, "value": "1" });
         this.update();
     };
 
@@ -103,8 +146,11 @@ function sampleClass() {
 
     this.removeallLinks = function () {
         $(".nodeStrokeClass").each(function (index) {
-            $(this).attr("fill", "#00ff00").attr('r', 10)
+            $(this)
+                .attr("fill", "#00ff00")
+                .attr('r', 10)
         });
+
         links.splice(0, links.length);
         this.update();
     };
@@ -113,6 +159,37 @@ function sampleClass() {
         nodes.splice(0, nodes.length);
         this.update();
     };
+
+    var tooltip = d3.select('body')
+        .append("div")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("background-color", "black")
+        .style("border-radius", "5px")
+        .style("padding", "10px")
+        .style("color", "white")
+
+    var showTooltip = function (d) {
+        tooltip
+            .transition()
+            .duration(100)
+        tooltip
+            .style("opacity", 1)
+            .html("NodeID : " + d.id)
+            .style("left", "30px")
+            .style("top", "30px")
+    }
+    var moveTooltip = function (d) {
+        tooltip
+            .style("left", "30px")
+            .style("top", "30px")
+    }
+    var hideTooltip = function (d) {
+        tooltip
+            .transition()
+            .duration(100)
+            .style("opacity", 0)
+    }
 
     this.update = function () {
 
@@ -131,7 +208,7 @@ function sampleClass() {
                 return d.source.name + "-" + d.target.name;
             })
             .style("stroke-width", function (d) {
-                return Math.sqrt(d.value);
+                return Math.sqrt(d.value + 1);
             })
             .attr("class", "link");
 
@@ -151,6 +228,10 @@ function sampleClass() {
             .attr("class", "node")
             .attr('title', name)
             .call(force.drag);
+
+        nodeEnter.on("mouseover", showTooltip)
+            .on("mousemove", moveTooltip)
+            .on("mouseleave", hideTooltip)
 
         nodeEnter.append('svg:circle')
             .attr('r', 10)
@@ -173,8 +254,46 @@ function sampleClass() {
             .attr("x", 14)
             .attr("y", ".31em")
             .text(function (d, i) {
-                return i;
+                return d.id;
             });
+
+        nodeEnter.append("svg:rect")
+            .attr("x", -15)
+            .attr("y", -22)
+            .attr("height", 5)
+            .attr("width", 30)
+            .attr("z-index", 99999)
+            .attr("fill", "#000000")
+            .attr('id', function (d) {
+                return "rect_back" + d.id;
+            })
+            .attr("class", "hide")
+            .attr('visibility', 'visible')
+            .attr('fill-opacity', 0.5);
+
+
+        nodes.forEach(function (d, i) {
+            if (d.txs != null) {
+                d.txs.forEach(function (v, i) {
+                    var allTx = this.maxTx - this.minTx;
+                    var pushRight = 0.4;
+                    var pushTx = pushRight * ((v / allTx) * 100) - 20;
+                    nodeEnter.append("svg:rect")
+                        .attr("x", 10 + v)
+                        .attr("y", -22)
+                        .attr("height", 5)
+                        .attr("width", 2)
+                        .attr("z-index", 99999)
+                        .attr('id', function (d) {
+                            return "rect_state" + d.id;
+                        })
+                        .attr("class", "hide")
+                        .attr('visibility', 'visible')
+                        .attr("fill", "#000000")
+                });
+            }
+        });
+
 
         node.exit().remove();
 
