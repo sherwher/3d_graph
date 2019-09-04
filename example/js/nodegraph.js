@@ -196,6 +196,15 @@ function nodeGraph() {
         }
     }
 
+    var tooltip = d3.select('body')
+        .append("div")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("background-color", "black")
+        .style("border-radius", "5px")
+        .style("padding", "10px")
+        .style("color", "white")
+
     function update(data) {
         data.nodes.forEach(function (d, i) {
             d.id = d.name;
@@ -275,6 +284,49 @@ function nodeGraph() {
             .attr('visibility', 'visible')
             .attr('fill-opacity', 0.5);
 
+
+
+        var showTooltip = function (d) {
+            console.log(d)
+            tooltip
+                .transition()
+                .duration(100)
+            tooltip
+                .style("opacity", 1)
+                .html(
+
+                    "<p>NodeID : " + d.id + "</p>"
+                    + "<p>TxID : "
+                    + Array.from(n.txs.keys()).reverse().map((val, i) => {
+                        if (i == 0) return "<strong>" + val + "</strong>"
+                        return " " + val
+                    })
+                    + "</p>"
+                )
+                .style("left", d.x + (d3.mouse(this)[0] + 30) + "px")
+                .style("top", d.y + (d3.mouse(this)[1] + 30) + "px")
+                .style("width", "300px")
+                .style("height", "150px")
+        }
+        var moveTooltip = function (d) {
+            tooltip
+                .style("left", d.x + (d3.mouse(this)[0] + 30) + "px")
+                .style("top", d.y + (d3.mouse(this)[1] + 30) + "px")
+        }
+        var hideTooltip = function (d) {
+            console.log('hide', d3.mouse(this)[0], d3.mouse(this)[1])
+            tooltip
+                .transition()
+                .duration(100)
+                .style("opacity", 0)
+                .style("width", "0px")
+                .style("height", "0px")
+        }
+
+        nodeEnter.on("mouseover", showTooltip)
+            .on("mousemove", moveTooltip)
+            .on("mouseleave", hideTooltip)
+
         node.exit().remove();
 
         force.on('tick', function () {
@@ -332,6 +384,7 @@ function nodeGraph() {
             .nodes(data.nodes)
             .links(data.links)
             .start();
+
     }
 
     update(store_data);
