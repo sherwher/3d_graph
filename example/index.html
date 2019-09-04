@@ -20,6 +20,12 @@
             stroke-opacity: 0.3;
         }
 
+        .tx_dot {
+            height: 5px;
+            width: 2px;
+            fill: black
+        }
+
         .tooltip {
             position: absolute;
             z-index: 1070;
@@ -52,122 +58,81 @@
     <script src="js/nodegraph.js" charset="utf-8"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script>
-        var data = graph.getGraphData();
+        var data = {};
         data.nodes = [
-            { "name": 1, "source": false, "target": false },
-            { "name": 2, "source": false, "target": false },
-            { "name": 3, "source": false, "target": false },
-            { "name": 4, "source": false, "target": false },
-            { "name": 5, "source": false, "target": false },
-            { "name": 6, "source": false, "target": false },
-            { "name": 7, "source": false, "target": false },
+            { "name": 1 },
+            { "name": 2 },
+            { "name": 3 },
+            { "name": 4 },
+            { "name": 5 },
+            { "name": 6 },
+            { "name": 7 },
         ];
         data.links = [
             {
                 "source": 1,
-                "target": 3
+                "target": 3,
+                "tx": 1
             },
             {
                 "source": 5,
-                "target": 3
+                "target": 3,
+                "tx": 1
             }
         ]
         graph.setGraphData(data);
 
         setTimeout(() => {
-            graph.addNode({ "name": 8, "source": false, "target": false })
+            graph.addNode({ "name": 8 })
         }, 3000)
 
         setTimeout(() => {
-            graph.addNode({ "name": 9, "source": false, "target": false })
+            graph.addNode({ "name": 9 })
         }, 6000)
 
         setTimeout(() => {
-            graph.addLink({
+            graph.addOnlyOneLink({
                 "source": 2,
-                "target": 5
+                "target": 5,
+                "tx": 2
             })
         }, 9000)
-        // function randomRange(n1, n2) {
-        //     return Math.floor((Math.random() * (n2 - n1 + 1)) + n1);
-        // }
 
-        // function test(i) {
-        //     sample.addNode({
-        //         "name": i,
-        //         "group": 1
-        //     })
-        //     sample.addNode({
-        //         "name": i + 1,
-        //         "group": 1
-        //     })
-        //     sample.keepNodesOnTop();
-        //     setTimeout(function () {
-        //         sample.addLink(i, i + 1, 1)
-        //         sample.keepNodesOnTop();
-        //     }, 1000);
-        //     if (i < 10) {
-        //         setTimeout(function () {
-        //             sample.removeallLinks();
-        //             sample.keepNodesOnTop();
-        //             ++i;
-        //             test(i);
-        //         }, 3000);
-        //     }
-
-        // }
-
-
-        // test(0);
-        // setTimeout(function () {
-        //     sample.addLink(1, 2, 10)
-        //     sample.keepNodesOnTop();
-        // }, 33000);
-
-        // sample.keepNodesOnTop()
-
-        // var step = -1;
-        // function nextval() {
-        //     step++;
-        //     return 2000 + (1500 * step); // initial time, wait time
-        // }
-
-
-        // setTimeout(function () {
-        //     sample.removeallLinks();
-        //     sample.keepNodesOnTop();
-        // }, nextval());
-        // setTimeout(function () {
-
-        //     sample.addNode({
-        //         "name": 2,
-        //         "group": 1
-        //     })
-        //     sample.addNode({
-        //         "name": 3,
-        //         "group": 1
-        //     })
-        //     sample.addLink("2", "3", "1")
-        //     sample.keepNodesOnTop();
-        // }, nextval());
-        // setTimeout(function () {
-        //     sample.addLink("0", "1", "1")
-        //     sample.addLink("0", "12", "1")
-        //     sample.addLink("0", "17", "1")
-        //     sample.addLink("0", "30", "1")
-        //     sample.keepNodesOnTop();
-        // }, nextval());
-        // setTimeout(function () {
-        //     sample.removeallLinks();
-        //     sample.keepNodesOnTop();
-        // }, nextval());
-        // setTimeout(function () {
-        //     sample.addLink("2", "40", "1")
-        //     sample.addLink("2", "51", "1")
-        //     sample.addLink("2", "77", "1")
-        //     sample.keepNodesOnTop();
-        // }, nextval());
-
+        setTimeout(() => {
+            graph.addOnlyOneLink({
+                "source": 7,
+                "target": 6,
+                "tx": 3
+            })
+        }, 12000)
+        setTimeout(() => {
+            graph.addOnlyOneLink({
+                "source": 9,
+                "target": 8,
+                "tx": 7
+            })
+        }, 15000)
+        setTimeout(() => {
+            graph.addOnlyOneLink({
+                "source": 1,
+                "target": 2,
+                "tx": 1
+            })
+        }, 18000)
+        setTimeout(() => {
+            graph.addOnlyOneLink({
+                "source": 3,
+                "target": 5,
+                "tx": 50
+            })
+        }, 21000)
+        setTimeout(() => {
+            graph.addOnlyOneLink({
+                "source": 1,
+                "target": 3,
+                "tx": 100
+            })
+        }, 21000)
     </script>
 </body>
 
