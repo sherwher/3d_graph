@@ -94,25 +94,38 @@
                 "tx": randomRange(1, 20)
             });
         }
+        // json {to: , from: , tx: } 형태의 리스트를 넣으면 차트를 그림
         graph.expression_per_tic(data);
         $('#duration').text(graph.duration);
+
+        // 그리기 초기화
         $('#btn_init').on('click', function (e) {
             graph.expression_per_tic(data);
         });
+
+        // 그리기 빠르게 +1초(Max 60초)
         $('#btn_fast').on('click', function (e) {
             graph.toFast();
             $('#duration').text(graph.duration);
         });
+
+        // 그리기 느리게 -1초(Min 1초)
         $('#btn_slow').on('click', function (e) {
             graph.toSlow();
             $('#duration').text(graph.duration);
         });
+
+        // 정지되었던 그리기 다시 시작
         $('#btn_start').on('click', function (e) {
             graph.start();
         });
+
+        // 그리기 정지
         $('#btn_stop').on('click', function (e) {
             graph.stop();
         });
+
+        // tic당 그리기
         $('#btn_step').on('click', function (e) {
             graph.stepTic()
         });

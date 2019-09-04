@@ -284,8 +284,6 @@ function nodeGraph() {
             .attr('visibility', 'visible')
             .attr('fill-opacity', 0.5);
 
-
-
         var showTooltip = function (d) {
             console.log(d)
             tooltip
