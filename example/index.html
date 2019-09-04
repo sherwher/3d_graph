@@ -53,86 +53,70 @@
 </head>
 
 <body>
+    <button id="btn_start">시작</button>
+    <button id="btn_stop">정지</button>
+    <button id="btn_init">초기화</button>
+    <button id="btn_slow">느리게</button>
+    <button id="btn_fast">빠르게</button>
+    <button id="btn_step">다음</button>
+    <p id="duration"></p>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <!-- <script src="js/sample.js" charset="utf-8"></script> -->
+    <script src="js/queue.js" charset="utf-8"></script>
     <script src="js/nodegraph.js" charset="utf-8"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
     <script>
-        var data = {};
-        data.nodes = [
-            { "name": 1 },
-            { "name": 2 },
-            { "name": 3 },
-            { "name": 4 },
-            { "name": 5 },
-            { "name": 6 },
-            { "name": 7 },
-        ];
-        data.links = [
-            {
-                "source": 1,
-                "target": 3,
-                "tx": 1
-            },
-            {
-                "source": 5,
-                "target": 3,
-                "tx": 1
+        function randomRange(n1, n2) {
+            return Math.floor((Math.random() * (n2 - n1 + 1)) + n1);
+        }
+
+        function randomString() {
+            var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+            var string_length = 15;
+            var randomstring = '';
+            for (var i = 0; i < string_length; i++) {
+                var rnum = Math.floor(Math.random() * chars.length);
+                randomstring += chars.substring(rnum, rnum + 1);
             }
-        ]
-        graph.setGraphData(data);
+            //document.randform.randomfield.value = randomstring;
+            return randomstring;
+        }
 
-        setTimeout(() => {
-            graph.addNode({ "name": 8 })
-        }, 3000)
+        var data = [
 
-        setTimeout(() => {
-            graph.addNode({ "name": 9 })
-        }, 6000)
+        ];
 
-        setTimeout(() => {
-            graph.addOnlyOneLink({
-                "source": 2,
-                "target": 5,
-                "tx": 2
-            })
-        }, 9000)
+        for (var i = 0; i < 10; i++) {
+            data.push({
+                "from": randomString(),
+                "to": randomString(),
+                "tx": randomRange(1, 20)
+            });
+        }
+        graph.expression_per_tic(data);
+        $('#duration').text(graph.duration);
+        $('#btn_init').on('click', function (e) {
+            graph.expression_per_tic(data);
+        });
+        $('#btn_fast').on('click', function (e) {
+            graph.toFast();
+            $('#duration').text(graph.duration);
+        });
+        $('#btn_slow').on('click', function (e) {
+            graph.toSlow();
+            $('#duration').text(graph.duration);
+        });
+        $('#btn_start').on('click', function (e) {
+            graph.start();
+        });
+        $('#btn_stop').on('click', function (e) {
+            graph.stop();
+        });
+        $('#btn_step').on('click', function (e) {
+            graph.stepTic()
+        });
 
-        setTimeout(() => {
-            graph.addOnlyOneLink({
-                "source": 7,
-                "target": 6,
-                "tx": 3
-            })
-        }, 12000)
-        setTimeout(() => {
-            graph.addOnlyOneLink({
-                "source": 9,
-                "target": 8,
-                "tx": 7
-            })
-        }, 15000)
-        setTimeout(() => {
-            graph.addOnlyOneLink({
-                "source": 1,
-                "target": 2,
-                "tx": 1
-            })
-        }, 18000)
-        setTimeout(() => {
-            graph.addOnlyOneLink({
-                "source": 3,
-                "target": 5,
-                "tx": 50
-            })
-        }, 21000)
-        setTimeout(() => {
-            graph.addOnlyOneLink({
-                "source": 1,
-                "target": 3,
-                "tx": 100
-            })
-        }, 21000)
     </script>
 </body>
 

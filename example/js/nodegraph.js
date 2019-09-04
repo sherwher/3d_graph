@@ -3,128 +3,142 @@ var graph = {}
 
 
 function nodeGraph() {
-    this.data = {
+    var store_data = {
         nodes: [],
         links: [],
         minTx: null,
         maxTx: null,
     }
 
-    this.setGraphData = function (data) {
+    // this.setGraphData = function (data) {
+    //     for (var j = 0; j < data.nodes.length; j++) {
+    //         data.nodes[j].source = false;
+    //         data.nodes[j].target = false;
+    //         data.nodes[j].txs = new Map();
+    //     }
+    //     data.links.forEach((v, i) => {
+    //         // 노드에 대한 tx값의 min, max처리
+    //         if (data.minTx == null || data.maxTx == null) {
+    //             data.minTx = v.tx;
+    //             data.maxTx = v.tx;
+    //         } else {
+    //             if (data.minTx >= v.tx) {
+    //                 data.minTx = v.tx;
+    //             }
+
+    //             if (data.maxTx < v.tx) {
+    //                 data.maxTx = v.tx;
+    //             }
+    //         }
+    //         // 노드에 대한 tx 및 highlight처리
+    //         for (var j = 0; j < data.nodes.length; j++) {
+    //             if (v.source == data.nodes[j].name || v.target == data.nodes[j].name) {
+    //                 data.nodes[j].txs.set(v.tx, v.tx);
+    //             }
+    //             if (v.source == data.nodes[j].name) {
+    //                 data.nodes[j].source = true;
+    //             }
+    //             if (v.target == data.nodes[j].name) {
+    //                 data.nodes[j].target = true;
+    //             }
+    //             console.log(data.nodes[j])
+    //         }
+
+    //     });
+    //     this.data = $.extend({}, this.data, data);
+    //     update(this.data);
+    //     keepNodesOnTop();
+    // }
+
+    function findNode(data, name) {
         for (var j = 0; j < data.nodes.length; j++) {
-            data.nodes[j].source = false;
-            data.nodes[j].target = false;
-            data.nodes[j].txs = new Map();
+            if (name == data.nodes[j].name) {
+                return data.nodes[j];
+            }
         }
-        data.links.forEach((v, i) => {
-            // 노드에 대한 tx값의 min, max처리
-            if (data.minTx == null || data.maxTx == null) {
-                data.minTx = v.tx;
-                data.maxTx = v.tx;
-            } else {
-                if (data.minTx >= v.tx) {
-                    data.minTx = v.tx;
-                }
-
-                if (data.maxTx < v.tx) {
-                    data.maxTx = v.tx;
-                }
-            }
-            // 노드에 대한 tx 및 highlight처리
-            for (var j = 0; j < data.nodes.length; j++) {
-                if (v.source == data.nodes[j].name || v.target == data.nodes[j].name) {
-                    data.nodes[j].txs.set(v.tx, v.tx);
-                }
-                if (v.source == data.nodes[j].name) {
-                    data.nodes[j].source = true;
-                }
-                if (v.target == data.nodes[j].name) {
-                    data.nodes[j].target = true;
-                }
-                console.log(data.nodes[j])
-            }
-
-        });
-        this.data = $.extend({}, this.data, data);
-        update(this.data);
-        keepNodesOnTop();
+        return null;
     }
 
-    this.addNode = function (node) {
-        node.source = false;
-        node.target = false;
-        node.txs = new Map();
-        this.data.nodes.push(node);
-        update(this.data);
-        keepNodesOnTop();
+    function addNode(node) {
+        if (findNode(store_data, node.name) == null) {
+            node.source = false;
+            node.target = false;
+            node.x = 100;
+            node.y = 100;
+            node.txs = new Map();
+            store_data.nodes.push(node);
+            update(store_data);
+            keepNodesOnTop();
+        }
     }
 
-    this.addLink = function (link) {
-
-        if (this.data.minTx == null || this.data.maxTx == null) {
-            this.data.minTx = link.tx;
-            this.data.maxTx = link.tx;
+    function addLink(link) {
+        if (store_data.minTx == null || store_data.maxTx == null) {
+            store_data.minTx = link.tx;
+            store_data.maxTx = link.tx;
         } else {
-            if (this.data.minTx >= link.tx) {
-                this.data.minTx = link.tx;
+            if (store_data.minTx >= link.tx) {
+                store_data.minTx = link.tx;
             }
 
-            if (this.data.maxTx < link.tx) {
-                this.data.maxTx = link.tx;
+            if (store_data.maxTx < link.tx) {
+                store_data.maxTx = link.tx;
             }
         }
 
-        for (var j = 0; j < this.data.nodes.length; j++) {
+        for (var j = 0; j < store_data.nodes.length; j++) {
             if (link.source == this.data.nodes[j].name) {
-                this.data.nodes[j].source = true;
-                this.data.nodes[j].txs.set(link.tx, link.tx);
+                store_data.nodes[j].source = true;
+                store_data.nodes[j].txs.set(link.tx, link.tx);
             }
-            if (link.target == this.data.nodes[j].name) {
-                this.data.nodes[j].target = true;
-                this.data.nodes[j].txs.set(link.tx, link.tx);
+            if (link.target == store_data.nodes[j].name) {
+                store_data.nodes[j].target = true;
+                store_data.nodes[j].txs.set(link.tx, link.tx);
             }
 
         }
-        this.data.links.push(link);
-        update(this.data);
+        store_data.links.push(link);
+        update(store_data);
         keepNodesOnTop();
     }
-    this.addOnlyOneLink = function (link) {
-        this.data.links = [];
-        if (this.data.minTx == null || this.data.maxTx == null) {
-            this.data.minTx = link.tx;
-            this.data.maxTx = link.tx;
+    function addOnlyOneLink(link) {
+        store_data.links = [];
+        if (store_data.minTx == null || store_data.maxTx == null) {
+            store_data.minTx = link.tx;
+            store_data.maxTx = link.tx;
         } else {
-            if (this.data.minTx >= link.tx) {
-                this.data.minTx = link.tx;
+            if (store_data.minTx >= link.tx) {
+                store_data.minTx = link.tx;
             }
 
-            if (this.data.maxTx < link.tx) {
-                this.data.maxTx = link.tx;
+            if (store_data.maxTx < link.tx) {
+                store_data.maxTx = link.tx;
             }
         }
-        for (var j = 0; j < this.data.nodes.length; j++) {
-            if (link.source == this.data.nodes[j].name) {
-                this.data.nodes[j].source = true;
-                this.data.nodes[j].txs.set(link.tx, link.tx);
+        for (var j = 0; j < store_data.nodes.length; j++) {
+            if (link.source == store_data.nodes[j].name) {
+                store_data.nodes[j].source = true;
+                store_data.nodes[j].txs.set(link.tx, link.tx);
             } else {
-                this.data.nodes[j].source = false;
+                store_data.nodes[j].source = false;
             }
-            if (link.target == this.data.nodes[j].name) {
-                this.data.nodes[j].target = true;
-                this.data.nodes[j].txs.set(link.tx, link.tx);
+            if (link.target == store_data.nodes[j].name) {
+                store_data.nodes[j].target = true;
+                store_data.nodes[j].txs.set(link.tx, link.tx);
             } else {
-                this.data.nodes[j].target = false;
+                store_data.nodes[j].target = false;
             }
         }
-        this.data.links.push(link);
-        update(this.data);
+        store_data.links.push(link);
+        update(store_data);
         keepNodesOnTop();
     }
-    this.removeAllNode = function () {
-        this.data.links = [];
-        this.data.nodes = [];
-        update(this.data);
+    function removeAllNode() {
+        store_data.links = [];
+        store_data.nodes = [];
+        store_data.minTx = null
+        store_data.maxTx = null
+        update(store_data);
         keepNodesOnTop();
     }
 
@@ -240,42 +254,31 @@ function nodeGraph() {
             .attr('r', 2)
             .attr('stroke', 'black');
 
-        nodeEnter.append("svg:text")
-            .attr("class", "textClass")
-            .attr("x", 14)
-            .attr("y", ".31em")
-            .text(function (d, i) {
-                return d.name;
-            });
+        // nodeEnter.append("svg:text")
+        //     .attr("class", "textClass")
+        //     .attr("x", 14)
+        //     .attr("y", ".31em")
+        //     .text(function (d, i) {
+        //         return d.name;
+        //     });
 
         nodeEnter.append("svg:rect")
             .attr("x", -20)
             .attr("y", -22)
             .attr("height", 5)
             .attr("width", 40)
-            .attr("z-index", 9999)
             .attr("fill", "#000000")
             .attr('id', function (d) {
                 return "rect_back" + d.id;
             })
-            .attr("class", "hide")
+            .attr("class", "tx_bar")
             .attr('visibility', 'visible')
             .attr('fill-opacity', 0.5);
-
-
-        // nodeEnter.append("rect")
-        //     .attr("height", 5)
-        //     .attr("width", function(d) {})
-        //     .attr("z-index", 99999)
-        //     .attr("fill", "#000000")
-        //     .attr("x", -15)
-        //     .attr("y", -22 + j * 2)
-        //     .attr('visibility', 'visible')
-
 
         node.exit().remove();
 
         force.on('tick', function () {
+
             node.attr('transform', function (d) { return 'translate(' + d.x + ',' + d.y + ')'; })
                 .attr('clip-path', function (d) { return 'url(#clip-' + d.index + ')'; });
 
@@ -301,14 +304,18 @@ function nodeGraph() {
         */
         for (var i in data.nodes) {
             var n = data.nodes[i];
+            // 하일라이트처리
             $("#round" + n.id)
                 .attr("fill", circleColor(n))
                 .attr('r', circleSize(n))
-            $("#rect_back" + n.id).empty();
+
             var txs = Array.from(n.txs.keys());
+
+            // tx_dot이 계속 겹쳐 보일 수 있으니 전체 삭제
             svg.select("#g" + n.id).selectAll('.tx_dot').remove();
             var boxs = data.maxTx - data.minTx + 1;
             var boxWidth = 40 * (1 / boxs);
+
             // boxWidth가 너무 작으면 눈에 보이지 않게 되므로 최소 1px아래로는 떨어지지 않게한다
             var virtualBoxWidth = boxWidth < 1 ? 1 : boxWidth;
             for (var j = 0; j < txs.length; j++) {
@@ -316,7 +323,7 @@ function nodeGraph() {
                     .append('rect')
                     .attr('class', 'tx_dot')
                     .attr("y", -22)
-                    .attr("x", -20 + boxWidth * (txs[j] - 1))
+                    .attr("x", -20 + boxWidth * (txs[j] - data.minTx))
                     .style("width", virtualBoxWidth)
             }
         }
@@ -327,13 +334,103 @@ function nodeGraph() {
             .start();
     }
 
-    update(this.data);
+    update(store_data);
 
     function keepNodesOnTop() {
         $(".nodeStrokeClass").each(function (index) {
             var gnode = this.parentNode;
             gnode.parentNode.appendChild(gnode);
         });
+        $(".tx_bar").each(function (index) {
+            var gnode = this.parentNode;
+            gnode.parentNode.appendChild(gnode);
+        });
+    }
+
+    function cycles_per_tick(tic) {
+        var shape = {
+            from: 0,
+            to: 0,
+            tx: 0
+        };
+
+        tic = $.extend({}, shape, tic);
+
+        addNode({ "name": tic.from });
+        setTimeout(addNode({ "name": tic.to }), 500);
+        setTimeout(addOnlyOneLink({ "source": tic.from, "target": tic.to, "tx": tic.tx }), 800);
+    }
+
+    this.duration = 3000;
+    this.timer = null;
+    var queue = new Queue();
+
+    this.expression_per_tic = function (data) {
+        queue = new Queue();
+        removeAllNode();
+        clearInterval(this.timer);
+
+        data.forEach((v) => {
+            queue.enqueue(v);
+        });
+
+        this.timer = setInterval(() => {
+            var job = queue.dequeue();
+            if (job != null) {
+                cycles_per_tick(job);
+            } else {
+                clearInterval(this.timer);
+            }
+        }, this.duration)
+    }
+
+    this.toSlow = function () {
+        clearInterval(this.timer);
+        this.duration = this.duration + 1000 > 60000 ? 60000 : this.duration + 1000;
+        this.timer = setInterval(() => {
+            var job = queue.dequeue();
+            if (job != null) {
+                cycles_per_tick(job);
+            } else {
+                clearInterval(this.timer);
+            }
+        }, this.duration)
+    }
+
+    this.toFast = function () {
+        clearInterval(this.timer);
+        this.duration = this.duration - 1000 > 0 ? this.duration - 1000 : 1000;
+        this.timer = setInterval(() => {
+            var job = queue.dequeue();
+            if (job != null) {
+                cycles_per_tick(job);
+            } else {
+                clearInterval(this.timer);
+            }
+        }, this.duration)
+    }
+
+    this.stop = function () {
+        clearInterval(this.timer);
+    }
+
+    this.start = function () {
+        this.timer = setInterval(() => {
+            var job = queue.dequeue();
+            if (job != null) {
+                cycles_per_tick(job);
+            } else {
+                clearInterval(this.timer);
+            }
+        }, this.duration)
+    }
+
+    this.stepTic = function () {
+        clearInterval(this.timer);
+        var job = queue.dequeue();
+        if (job != null) {
+            cycles_per_tick(job);
+        }
     }
 }
 
