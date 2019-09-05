@@ -128,7 +128,6 @@ function sampleClass() {
         selectedSource.txs.push(tx);
         selectedTarget.txs.push(tx);
 
-        console.log(selectedSource)
         addLinkHighlight(source, target, tx);
         links.push({ "source": selectedSource, "target": selectedTarget, "value": "1" });
         this.update();

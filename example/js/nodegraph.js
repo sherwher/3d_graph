@@ -10,6 +10,49 @@ function nodeGraph() {
         maxTx: null,
     }
 
+    var display = {
+        allNode: {
+            id: 'allNode',
+            value: 0,
+            prefix: '노드수 : '
+        },
+        maxTx: {
+            id: 'maxTx',
+            value: 0,
+            prefix: '최대 TX : '
+        },
+        minTx: {
+            id: 'minTx',
+            value: 0,
+            prefix: '최소 TX : '
+        },
+        to: {
+            id: 'to',
+            value: '',
+            prefix: 'TO : '
+        },
+        from: {
+            id: 'from',
+            value: '',
+            prefix: 'FROM : '
+        },
+        tx: {
+            id: "tx",
+            value: 0,
+            prefix: 'TX : '
+        },
+        selectNode: {
+            id: "selectNode",
+            value: '',
+            prefix: '선택된 노드ID : '
+        },
+        TXList: {
+            id: "TXList",
+            value: [],
+            prefix: 'TX List : '
+        }
+    }
+
     // this.setGraphData = function (data) {
     //     for (var j = 0; j < data.nodes.length; j++) {
     //         data.nodes[j].source = false;
@@ -97,6 +140,9 @@ function nodeGraph() {
             }
 
         }
+        display.to.value = link.source;
+        display.from.value = link.target;
+        display.tx.value = link.tx;
         store_data.links.push(link);
         update(store_data);
         keepNodesOnTop();
@@ -129,6 +175,9 @@ function nodeGraph() {
                 store_data.nodes[j].target = false;
             }
         }
+        display.to.value = link.source;
+        display.from.value = link.target;
+        display.tx.value = link.tx;
         store_data.links.push(link);
         update(store_data);
         keepNodesOnTop();
@@ -150,7 +199,8 @@ function nodeGraph() {
     var svg = d3.select('body')
         .append('svg')
         .attr('width', width)
-        .attr('height', height);
+        .attr('height', height)
+        .style("border", "1px solid black");
 
     var voronoi = d3.geom.voronoi()
         .x(function (d) { return d.x; })
@@ -196,14 +246,105 @@ function nodeGraph() {
         }
     }
 
-    var tooltip = d3.select('body')
-        .append("div")
-        .style("opacity", 0)
+    svg
+        .append("rect")
         .attr("class", "tooltip")
-        .style("background-color", "black")
-        .style("border-radius", "5px")
-        .style("padding", "10px")
-        .style("color", "white")
+        .attr("padding", "10px")
+        .attr("fill", "#000000")
+        .attr("x", width - 330 + "px")
+        .attr("y", "30px")
+        .attr("width", "300px")
+        .attr("height", "220px")
+        .attr("rx", "20")
+        .attr("ry", "20")
+
+    svg.append("text")
+        .attr("id", "allNode")
+        .text("표현된 노드수 : ")
+        .attr("x", width - 310 + "px")
+        .attr("y", "55px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .attr("id", "maxTx")
+        .text("최대 TX : ")
+        .attr("x", width - 310 + "px")
+        .attr("y", "75px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .attr("id", "minTx")
+        .text("최소 TX : ")
+        .attr("x", width - 310 + "px")
+        .attr("y", "95px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .text("------------------------------------------")
+        .attr("x", width - 310 + "px")
+        .attr("y", "115px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .attr("id", "to")
+        .text("TO : ")
+        .attr("x", width - 310 + "px")
+        .attr("y", "135px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .attr("id", "from")
+        .text("FROM : ")
+        .attr("x", width - 310 + "px")
+        .attr("y", "155px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .attr("id", "tx")
+        .text("TX : ")
+        .attr("x", width - 310 + "px")
+        .attr("y", "175px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .text("------------------------------------------")
+        .attr("x", width - 310 + "px")
+        .attr("y", "195px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .attr("id", "selectNode")
+        .text("선택된 노드ID : ")
+        .attr("x", width - 310 + "px")
+        .attr("y", "215px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
+
+    svg.append("text")
+        .attr("id", "TXList")
+        .text("TX List : ")
+        .attr("x", width - 310 + "px")
+        .attr("y", "235px")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "15px")
+        .attr("fill", "#ffffff")
 
     function update(data) {
         data.nodes.forEach(function (d, i) {
@@ -232,7 +373,13 @@ function nodeGraph() {
             })
             .attr("class", "link");
 
-        link.exit().remove();
+        link.exit()
+            .transition()
+            .duration(300)
+            .style("stroke-width", function (d) {
+                return 0;
+            })
+            .remove();
 
         var node = svg.selectAll("g.node")
             .data(data.nodes, function (d) {
@@ -263,14 +410,6 @@ function nodeGraph() {
             .attr('r', 2)
             .attr('stroke', 'black');
 
-        // nodeEnter.append("svg:text")
-        //     .attr("class", "textClass")
-        //     .attr("x", 14)
-        //     .attr("y", ".31em")
-        //     .text(function (d, i) {
-        //         return d.name;
-        //     });
-
         nodeEnter.append("svg:rect")
             .attr("x", -20)
             .attr("y", -22)
@@ -285,44 +424,20 @@ function nodeGraph() {
             .attr('fill-opacity', 0.5);
 
         var showTooltip = function (d) {
-            console.log(d)
-            tooltip
-                .transition()
-                .duration(100)
-            tooltip
-                .style("opacity", 1)
-                .html(
+            display.selectNode.value = d.name;
+            display.TXList.value = Array.from(d.txs.keys()).reverse().toString();
+            $('#selectNode').text(display.selectNode.prefix + d.name)
+            $('#TXList').text(display.TXList.prefix + Array.from(d.txs.keys()).reverse().toString())
+        }
 
-                    "<p>NodeID : " + d.id + "</p>"
-                    + "<p>TxID : "
-                    + Array.from(n.txs.keys()).reverse().map((val, i) => {
-                        if (i == 0) return "<strong>" + val + "</strong>"
-                        return " " + val
-                    })
-                    + "</p>"
-                )
-                .style("left", d.x + (d3.mouse(this)[0] + 30) + "px")
-                .style("top", d.y + (d3.mouse(this)[1] + 30) + "px")
-                .style("width", "300px")
-                .style("height", "150px")
-        }
-        var moveTooltip = function (d) {
-            tooltip
-                .style("left", d.x + (d3.mouse(this)[0] + 30) + "px")
-                .style("top", d.y + (d3.mouse(this)[1] + 30) + "px")
-        }
         var hideTooltip = function (d) {
-            console.log('hide', d3.mouse(this)[0], d3.mouse(this)[1])
-            tooltip
-                .transition()
-                .duration(100)
-                .style("opacity", 0)
-                .style("width", "0px")
-                .style("height", "0px")
+            display.selectNode.value = '';
+            display.TXList.value = [];
+            $('#selectNode').text(display.selectNode.prefix)
+            $('#TXList').text(display.TXList.prefix)
         }
 
         nodeEnter.on("mouseover", showTooltip)
-            .on("mousemove", moveTooltip)
             .on("mouseleave", hideTooltip)
 
         node.exit().remove();
@@ -377,6 +492,13 @@ function nodeGraph() {
                     .style("width", virtualBoxWidth)
             }
         }
+        display.allNode.value = data.nodes.length;
+        display.minTx.value = data.minTx != null ? data.minTx : 0;
+        display.maxTx.value = data.maxTx != null ? data.maxTx : 0;
+
+        for (var key in display) {
+            svg.select('#' + display[key].id).text(display[key].prefix + display[key].value)
+        }
 
         force
             .nodes(data.nodes)
@@ -415,13 +537,14 @@ function nodeGraph() {
     this.duration = 3000;
     this.timer = null;
     var queue = new Queue();
-
+    this.tics = [];
     this.expression_per_tic = function (data) {
+        this.tics = data;
         queue = new Queue();
         removeAllNode();
         clearInterval(this.timer);
 
-        data.forEach((v) => {
+        this.tics.forEach((v) => {
             queue.enqueue(v);
         });
 
