@@ -46,10 +46,10 @@ function nodeGraph() {
             value: '',
             prefix: '선택된 노드ID : '
         },
-        TXList: {
-            id: "TXList",
+        lastTX: {
+            id: "lastTX",
             value: [],
-            prefix: 'TX List : '
+            prefix: '최신TX : '
         }
     }
 
@@ -342,7 +342,7 @@ function nodeGraph() {
         .attr("fill", "#ffffff")
 
     svg.append("text")
-        .attr("id", "TXList")
+        .attr("id", "lastTX")
         .text("TX List : ")
         .attr("x", width - tooltipWidth + "px")
         .attr("y", tooltipY + fontMargin * 9)
@@ -429,16 +429,16 @@ function nodeGraph() {
 
         var showTooltip = function (d) {
             display.selectNode.value = d.name;
-            display.TXList.value = Array.from(d.txs.keys()).reverse().toString();
+            display.lastTX.value = Array.from(d.txs.keys()).reverse().toString();
             $('#selectNode').text(display.selectNode.prefix + d.name)
-            $('#TXList').text(display.TXList.prefix + Array.from(d.txs.keys()).reverse().toString())
+            $('#lastTX').text(display.lastTX.prefix + Array.from(d.txs.keys()).reverse()[0])
         }
 
         var hideTooltip = function (d) {
             display.selectNode.value = '';
-            display.TXList.value = [];
+            display.lastTX.value = [];
             $('#selectNode').text(display.selectNode.prefix)
-            $('#TXList').text(display.TXList.prefix)
+            $('#lastTX').text(display.lastTX.prefix)
         }
 
         nodeEnter.on("mouseover", showTooltip)
