@@ -191,12 +191,11 @@ function nodeGraph() {
         keepNodesOnTop();
     }
 
-    var width = window.innerHeight - 20,
-        height = window.innerHeight - 20;
+    var width = d3.select('#graph')[0][0].clientWidth - 20,
+        height = d3.select('#graph')[0][0].clientHeight - 20;
     var charge = 0.317 * height;
     var distance = 0.211 * height;
-
-    var svg = d3.select('body')
+    var svg = d3.select('#graph')
         .append('svg')
         .attr('width', width)
         .attr('height', height)
@@ -246,104 +245,109 @@ function nodeGraph() {
         }
     }
 
-    svg
-        .append("rect")
+    var tooltipWidth = 220;
+    var tooltipHeight = 190;
+    var tooltipY = 10;
+    var tooltipMargin = 10;
+    var fontSize = 15;
+    var fontMargin = 20;
+
+    svg.append("rect")
         .attr("class", "tooltip")
         .attr("padding", "10px")
         .attr("fill", "#000000")
-        .attr("x", width - 330 + "px")
-        .attr("y", "30px")
-        .attr("width", "300px")
-        .attr("height", "220px")
-        .attr("rx", "20")
-        .attr("ry", "20")
+        .attr("x", width - tooltipWidth - tooltipMargin + "px")
+        .attr("y", tooltipY + "px")
+        .attr("width", tooltipWidth + "px")
+        .attr("height", tooltipHeight + "px")
+        .attr("rx", "10")
+        .attr("ry", "10")
+        .attr("fill-opacity", "0.5")
 
     svg.append("text")
         .attr("id", "allNode")
         .text("표현된 노드수 : ")
-        .attr("x", width - 310 + "px")
-        .attr("y", "55px")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin + "px")
         .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+        .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff")
 
     svg.append("text")
         .attr("id", "maxTx")
         .text("최대 TX : ")
-        .attr("x", width - 310 + "px")
-        .attr("y", "75px")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 2 + "px")
         .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+        .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff")
 
     svg.append("text")
         .attr("id", "minTx")
         .text("최소 TX : ")
-        .attr("x", width - 310 + "px")
-        .attr("y", "95px")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 3 + "px")
         .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+        .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff")
 
-    svg.append("text")
-        .text("------------------------------------------")
-        .attr("x", width - 310 + "px")
-        .attr("y", "115px")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+    svg.append("rect")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 4 - (fontMargin / 2))
+        .attr("width", tooltipWidth - fontMargin)
+        .attr("height", "1px")
         .attr("fill", "#ffffff")
 
     svg.append("text")
         .attr("id", "to")
         .text("TO : ")
-        .attr("x", width - 310 + "px")
-        .attr("y", "135px")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 5 - (fontMargin / 2) + "px")
         .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+        .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff")
 
     svg.append("text")
         .attr("id", "from")
         .text("FROM : ")
-        .attr("x", width - 310 + "px")
-        .attr("y", "155px")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 6 - (fontMargin / 2) + "px")
         .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+        .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff")
 
     svg.append("text")
         .attr("id", "tx")
         .text("TX : ")
-        .attr("x", width - 310 + "px")
-        .attr("y", "175px")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 7 - (fontMargin / 2) + "px")
         .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+        .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff")
 
-    svg.append("text")
-        .text("------------------------------------------")
-        .attr("x", width - 310 + "px")
-        .attr("y", "195px")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+    svg.append("rect")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 7)
+        .attr("width", tooltipWidth - fontMargin)
+        .attr("height", "1px")
         .attr("fill", "#ffffff")
 
     svg.append("text")
         .attr("id", "selectNode")
         .text("선택된 노드ID : ")
-        .attr("x", width - 310 + "px")
-        .attr("y", "215px")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 8)
         .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+        .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff")
 
     svg.append("text")
         .attr("id", "TXList")
         .text("TX List : ")
-        .attr("x", width - 310 + "px")
-        .attr("y", "235px")
+        .attr("x", width - tooltipWidth + "px")
+        .attr("y", tooltipY + fontMargin * 9)
         .attr("font-family", "sans-serif")
-        .attr("font-size", "15px")
+        .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff")
 
     function update(data) {

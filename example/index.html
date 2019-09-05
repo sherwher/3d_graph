@@ -48,17 +48,24 @@
             font-size: .875rem;
             word-wrap: break-word;
         }
+
+        .graph {
+            height: 900px;
+            width: 900px;
+        }
     </style>
 </head>
 
 <body>
+    <div class="graph" id="graph"></div>
     <button id="btn_start">시작</button>
     <button id="btn_stop">정지</button>
     <button id="btn_init">초기화</button>
     <button id="btn_slow">느리게</button>
     <button id="btn_fast">빠르게</button>
     <button id="btn_step">다음</button>
-    <p id="duration"></p>
+    <span id="duration"></span>
+    <p></p>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <!-- <script src="js/sample.js" charset="utf-8"></script> -->
     <script src="js/queue.js" charset="utf-8"></script>
@@ -72,7 +79,7 @@
 
         function randomString() {
             var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
-            var string_length = 15;
+            var string_length = 11;
             var randomstring = '';
             for (var i = 0; i < string_length; i++) {
                 var rnum = Math.floor(Math.random() * chars.length);
@@ -88,10 +95,10 @@
 
         for (var i = 0; i < 100; i++) {
             data.push({
-                "from": randomString(),
-                "to": randomString(),
-                // "from": randomRange(1, 10),
-                // "to": randomRange(1, 10),
+                // "from": randomString(),
+                // "to": randomString(),
+                "from": 'node_' + randomRange(1, 10),
+                "to": 'node_' + randomRange(1, 10),
                 "tx": randomRange(1, 20)
             });
         }
