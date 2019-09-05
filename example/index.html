@@ -51,7 +51,7 @@
 
         .graph {
             height: 900px;
-            width: 900px;
+            width: 1500px;
         }
     </style>
 </head>
@@ -89,21 +89,43 @@
             return randomstring;
         }
 
-        var data = [
+        // var data = [
 
-        ];
+        // ];
 
-        for (var i = 0; i < 100; i++) {
-            data.push({
-                // "from": randomString(),
-                // "to": randomString(),
-                "from": 'node_' + randomRange(1, 10),
-                "to": 'node_' + randomRange(1, 10),
-                "tx": randomRange(1, 20)
-            });
+        // for (var i = 0; i < 56; i++) {
+        //     data.push({
+        //         // "from": randomString(),
+        //         // "to": randomString(),
+        //         "from": 'node_' + randomRange(1, 10),
+        //         "to": 'node_' + randomRange(1, 10),
+        //         "tx": randomRange(1, 20)
+        //     });
+        // }
+
+        var tx = [
+
+        ]
+        for (var z = 1; z < 56; z++) {
+            var tics = [];
+            for (var j = 1; j < 56; j++) {
+                for (var i = 1; i < 8; i++) {
+                    tics.push({
+                        "from": 'node_' + j,
+                        "to": 'node_' + (((j - 1) * 7) + i + 1),
+                        "tx": z
+                    });
+                }
+            }
+            tx.push(tics);
         }
+        graph.expression_per_tx(tx);
+
         // json {to: , from: , tx: } 형태의 리스트를 넣으면 차트를 그림
-        graph.expression_per_tic(data);
+        // graph.expression_per_tic(data);
+
+
+
         $('#duration').text(graph.duration);
 
         // 그리기 초기화
@@ -135,6 +157,7 @@
 
         // tic당 그리기
         $('#btn_step').on('click', function (e) {
+            // graph.stepTic()
             graph.stepTic()
         });
 
