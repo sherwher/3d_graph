@@ -108,12 +108,13 @@
         ]
         for (var z = 1; z < 56; z++) {
             var tics = [];
-            for (var j = 1; j < 56; j++) {
+            var tx_ram = randomRange(1, 20);
+            for (var j = 1; j < 45; j++) {
                 for (var i = 1; i < 8; i++) {
                     tics.push({
                         "from": 'node_' + j,
                         "to": 'node_' + (((j - 1) * 7) + i + 1),
-                        "tx": z
+                        "tx": tx_ram
                     });
                 }
             }

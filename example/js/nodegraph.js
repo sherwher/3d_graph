@@ -106,13 +106,15 @@ function nodeGraph() {
         if (findNode(store_data, node.name) == null) {
             node.source = false;
             node.target = false;
-            node.x = 100;
-            node.y = 100;
+            //노드 생성 위치
+            node.x = 200;
+            node.y = 200;
             node.txs = new Map();
             store_data.nodes.push(node);
             update(store_data);
             keepNodesOnTop();
         }
+
     }
 
     function addLink(link) {
@@ -238,7 +240,7 @@ function nodeGraph() {
         .charge(-1 * charge)
         // .charge(-500)
         .friction(0.2)
-        .linkDistance(30)
+        .linkDistance(150)
         .size([width, height]);
 
     function circleSize(d) {
@@ -313,8 +315,6 @@ function nodeGraph() {
         .attr("height", "1px")
         .attr("fill", "#ffffff")
 
-
-
     svg.append("text")
         .attr("id", "from")
         .text("FROM : ")
@@ -369,12 +369,36 @@ function nodeGraph() {
         .attr("font-size", fontSize + "px")
         .attr("fill", "#ffffff");
 
+    var node, link;
+
+    force.on('tick', function () {
+        node.attr('transform', function (d) { return 'translate(' + d.x + ',' + d.y + ')'; })
+        // .attr('clip-path', function (d) { return 'url(#clip-' + d.index + ')'; });
+
+        link.attr('x1', function (d) { return d.source.x; })
+            .attr('y1', function (d) { return d.source.y; })
+            .attr('x2', function (d) { return d.target.x; })
+            .attr('y2', function (d) { return d.target.y; });
+
+        // var clip = svg.selectAll('.clip')
+        //     .data(recenterVoronoi(node.data()), function (d) { return d.point.index; });
+
+        // clip.enter().append('clipPath')
+        //     .attr('id', function (d) { return 'clip-' + d.point.index; })
+        //     .attr('class', 'clip');
+        // clip.exit().remove()
+
+        // clip.selectAll('path').remove();
+        // clip.append('path')
+        //     .attr('d', function (d) { return 'M' + d.join(',') + 'Z'; });
+    });
+
     function update(data) {
         data.nodes.forEach(function (d, i) {
             d.id = d.name;
         });
 
-        var link = svg.selectAll("line")
+        link = svg.selectAll("line")
             .data(data.links, function (d) {
                 data.nodes.forEach(function (n, i) {
                     if (n.id == d.source) {
@@ -396,15 +420,9 @@ function nodeGraph() {
             })
             .attr("class", "link");
 
-        link.exit()
-            .transition()
-            .duration(300)
-            .style("stroke-width", function (d) {
-                return 0;
-            })
-            .remove();
+        link.exit().remove();
 
-        var node = svg.selectAll("g.node")
+        node = svg.selectAll("g.node")
             .data(data.nodes, function (d) {
                 return d.id;
             });
@@ -448,9 +466,10 @@ function nodeGraph() {
 
         var showTooltip = function (d) {
             display.selectNode.value = d.name;
-            display.lastTX.value = Array.from(d.txs.keys()).reverse()[0];
+            var txs = Array.from(d.txs.keys()).reverse();
+            display.lastTX.value = txs[0] + " (총갯수 : " + txs.length + ")";
             $('#selectNode').text(display.selectNode.prefix + d.name)
-            $('#lastTX').text(display.lastTX.prefix + Array.from(d.txs.keys()).reverse()[0])
+            $('#lastTX').text(display.lastTX.prefix + txs[0] + " (총갯수: " + txs.length + ")");
         }
 
         var hideTooltip = function (d) {
@@ -465,32 +484,12 @@ function nodeGraph() {
 
         node.exit().remove();
 
-        force.on('tick', function () {
 
-            node.attr('transform', function (d) { return 'translate(' + d.x + ',' + d.y + ')'; })
-                .attr('clip-path', function (d) { return 'url(#clip-' + d.index + ')'; });
-
-            link.attr('x1', function (d) { return d.source.x; })
-                .attr('y1', function (d) { return d.source.y; })
-                .attr('x2', function (d) { return d.target.x; })
-                .attr('y2', function (d) { return d.target.y; });
-
-            var clip = svg.selectAll('.clip')
-                .data(recenterVoronoi(node.data()), function (d) { return d.point.index; });
-
-            clip.enter().append('clipPath')
-                .attr('id', function (d) { return 'clip-' + d.point.index; })
-                .attr('class', 'clip');
-            clip.exit().remove()
-
-            clip.selectAll('path').remove();
-            clip.append('path')
-                .attr('d', function (d) { return 'M' + d.join(',') + 'Z'; });
-        });
         /**
         node가 highlight되는 부분 처리
         */
         for (var i in data.nodes) {
+
             var n = data.nodes[i];
             // 하일라이트처리
             $("#round" + n.id)
@@ -523,11 +522,19 @@ function nodeGraph() {
             svg.select('#' + display[key].id).text(display[key].prefix + display[key].value)
         }
 
+        // force
+        //     .nodes(data.nodes)
+        //     .links(data.links)
+        //     .start();
         force
+            .gravity(0.1)
+            .friction(0.2)
+            .linkDistance(function (d) { return 80 })
+            .size([width, height])
+            .charge(-300)
             .nodes(data.nodes)
             .links(data.links)
             .start();
-
     }
 
     update(store_data);
@@ -553,9 +560,8 @@ function nodeGraph() {
 
         tic = $.extend({}, shape, tic);
         addNode({ "name": tic.from });
-        setTimeout(addNode({ "name": tic.to }), 500);
-        setTimeout(addOnlyOneLink({ "source": tic.from, "target": tic.to, "tx": tic.tx }), 800);
-        // setTimeout(addLink({ "source": tic.from, "target": tic.to, "tx": tic.tx }), 800);
+        addNode({ "name": tic.to });
+        addOnlyOneLink({ "source": tic.from, "target": tic.to, "tx": tic.tx })
     }
     // tic단위로 작업. timer를 리턴함.
     function work_job_tic(timer, druation) {
@@ -571,17 +577,19 @@ function nodeGraph() {
     }
     // tic단위로 작업을 한후에 tx단위로 또 작업을 진행해야함.
     function cycles_per_tx(tic) {
-        var shape = {
-            from: 0,
-            to: 0,
-            tx: 0
-        };
+        function t_cycles_per_tx() {
+            var shape = {
+                from: 0,
+                to: 0,
+                tx: 0
+            };
 
-        tic = $.extend({}, shape, tic);
-        addNode({ "name": tic.from });
-        setTimeout(addNode({ "name": tic.to }), 200);
-        // setTimeout(addOnlyOneLink({ "source": tic.from, "target": tic.to, "tx": tic.tx }), 800);
-        setTimeout(addLink({ "source": tic.from, "target": tic.to, "tx": tic.tx }), 300);
+            tic = $.extend({}, shape, tic);
+            setTimeout(addNode({ "name": tic.from }), 500);
+            setTimeout(addNode({ "name": tic.to }), 1000);
+            setTimeout(addLink({ "source": tic.from, "target": tic.to, "tx": tic.tx }), 1500);
+        }
+        setTimeout(t_cycles_per_tx(tic), 500);
     }
 
     function work_job_tx(timer, duration) {
@@ -641,7 +649,7 @@ function nodeGraph() {
 
     this.toSlow = function () {
         clearInterval(this.timer);
-        this.duration = this.duration + 500 > 60000 ? 60000 : this.duration + 500;
+        this.duration = this.duration + 50 > 60000 ? 60000 : this.duration + 50;
         if (this.isTX) {
             this.timer = work_job_tx(queue, this.duration);
         } else {
@@ -651,7 +659,7 @@ function nodeGraph() {
 
     this.toFast = function () {
         clearInterval(this.timer);
-        this.duration = this.duration - 500 > 0 ? this.duration - 500 : 500;
+        this.duration = this.duration - 50 > 0 ? this.duration - 50 : 0;
         if (this.isTX) {
             this.timer = work_job_tx(queue, this.duration);
         } else {
