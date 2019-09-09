@@ -64,6 +64,8 @@
     <button id="btn_slow">느리게</button>
     <button id="btn_fast">빠르게</button>
     <button id="btn_step">다음</button>
+    <button id="btn_ableLink">링크사용</button>
+    <button id="btn_disableLink">링크사용안함</button>
     <span id="duration"></span>
     <p></p>
     <script src="http://d3js.org/d3.v3.min.js"></script>
@@ -106,10 +108,10 @@
         var tx = [
 
         ]
-        for (var z = 1; z < 56; z++) {
+        for (var z = 1; z < 3; z++) {
             var tics = [];
             var tx_ram = randomRange(1, 20);
-            for (var j = 1; j < 45; j++) {
+            for (var j = 1; j < 47; j++) {
                 for (var i = 1; i < 8; i++) {
                     tics.push({
                         "from": 'node_' + j,
@@ -162,6 +164,13 @@
             graph.stepTic()
         });
 
+        $('#btn_ableLink').on('click', function (e) {
+            graph.setAbleLink(true);
+        });
+
+        $('#btn_disableLink').on('click', function (e) {
+            graph.setAbleLink(false);
+        });
     </script>
 </body>
 

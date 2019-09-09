@@ -3,6 +3,8 @@ var graph = {}
 
 
 function nodeGraph() {
+    var ableLink = true;
+
     var store_data = {
         nodes: [],
         links: [],
@@ -147,6 +149,7 @@ function nodeGraph() {
         display.tx.value = link.tx;
         store_data.links.push(link);
         update(store_data);
+        customUpdate();
         keepNodesOnTop();
     }
     function addOnlyOneLink(link) {
@@ -182,7 +185,55 @@ function nodeGraph() {
         display.tx.value = link.tx;
         store_data.links.push(link);
         update(store_data);
+        customUpdate();
         keepNodesOnTop();
+    }
+
+
+    function customUpdate() {
+        /**
+        node가 highlight되는 부분 처리
+        */
+        for (var i in store_data.nodes) {
+
+            var n = store_data.nodes[i];
+
+            if (ableLink) {
+                d3.selectAll("#g" + n.id).call(force.drag);
+            } else {
+                d3.selectAll("#g" + n.id).on('mousedown.drag', null);
+            }
+
+            // 하일라이트처리
+            $("#round" + n.id)
+                .attr("fill", circleColor(n))
+                .attr('r', circleSize(n))
+
+            var txs = Array.from(n.txs.keys());
+
+            // tx_dot이 계속 겹쳐 보일 수 있으니 전체 삭제
+            svg.select("#g" + n.id).selectAll('.tx_dot').remove();
+            var boxs = store_data.maxTx - store_data.minTx + 1;
+            var boxWidth = 40 * (1 / boxs);
+
+            // boxWidth가 너무 작으면 눈에 보이지 않게 되므로 최소 1px아래로는 떨어지지 않게한다
+            var virtualBoxWidth = boxWidth < 1 ? 1 : boxWidth;
+            for (var j = 0; j < txs.length; j++) {
+                svg.select("#g" + n.id)
+                    .append('rect')
+                    .attr('class', 'tx_dot')
+                    .attr("y", -22)
+                    .attr("x", -20 + boxWidth * (txs[j] - store_data.minTx))
+                    .style("width", virtualBoxWidth)
+            }
+        }
+        display.allNode.value = store_data.nodes.length;
+        display.minTx.value = store_data.minTx != null ? store_data.minTx : 0;
+        display.maxTx.value = store_data.maxTx != null ? store_data.maxTx : 0;
+
+        for (var key in display) {
+            svg.select('#' + display[key].id).text(display[key].prefix + display[key].value)
+        }
     }
 
     function removeAllNode() {
@@ -380,6 +431,9 @@ function nodeGraph() {
             .attr('x2', function (d) { return d.target.x; })
             .attr('y2', function (d) { return d.target.y; });
 
+        // node.attr("cx", function (d) { return d.x; })
+        //     .attr("cy", function (d) { return d.y; });
+
         // var clip = svg.selectAll('.clip')
         //     .data(recenterVoronoi(node.data()), function (d) { return d.point.index; });
 
@@ -392,6 +446,11 @@ function nodeGraph() {
         // clip.append('path')
         //     .attr('d', function (d) { return 'M' + d.join(',') + 'Z'; });
     });
+
+    this.setAbleLink = (isable) => {
+        ableLink = isable;
+        update(store_data);
+    }
 
     function update(data) {
         data.nodes.forEach(function (d, i) {
@@ -434,6 +493,7 @@ function nodeGraph() {
                 return 'g' + d.id
             })
             .call(force.drag);
+
 
         nodeEnter.append('svg:circle')
             .attr('id', function (d) {
@@ -484,57 +544,33 @@ function nodeGraph() {
 
         node.exit().remove();
 
-
-        /**
-        node가 highlight되는 부분 처리
-        */
-        for (var i in data.nodes) {
-
-            var n = data.nodes[i];
-            // 하일라이트처리
-            $("#round" + n.id)
-                .attr("fill", circleColor(n))
-                .attr('r', circleSize(n))
-
-            var txs = Array.from(n.txs.keys());
-
-            // tx_dot이 계속 겹쳐 보일 수 있으니 전체 삭제
-            svg.select("#g" + n.id).selectAll('.tx_dot').remove();
-            var boxs = data.maxTx - data.minTx + 1;
-            var boxWidth = 40 * (1 / boxs);
-
-            // boxWidth가 너무 작으면 눈에 보이지 않게 되므로 최소 1px아래로는 떨어지지 않게한다
-            var virtualBoxWidth = boxWidth < 1 ? 1 : boxWidth;
-            for (var j = 0; j < txs.length; j++) {
-                svg.select("#g" + n.id)
-                    .append('rect')
-                    .attr('class', 'tx_dot')
-                    .attr("y", -22)
-                    .attr("x", -20 + boxWidth * (txs[j] - data.minTx))
-                    .style("width", virtualBoxWidth)
-            }
-        }
-        display.allNode.value = data.nodes.length;
-        display.minTx.value = data.minTx != null ? data.minTx : 0;
-        display.maxTx.value = data.maxTx != null ? data.maxTx : 0;
-
-        for (var key in display) {
-            svg.select('#' + display[key].id).text(display[key].prefix + display[key].value)
-        }
-
         // force
         //     .nodes(data.nodes)
         //     .links(data.links)
         //     .start();
-        force
-            .gravity(0.1)
-            .friction(0.2)
-            .linkDistance(function (d) { return 80 })
-            .size([width, height])
-            .charge(-300)
-            .nodes(data.nodes)
-            .links(data.links)
-            .start();
+
+        if (ableLink) {
+            force
+                .gravity(0.3)
+                .friction(0.5)
+                .linkDistance(function (d) { return 80 })
+                .size([width, height])
+                .charge(-300)
+                .nodes(data.nodes)
+                .links(data.links)
+                .start();
+        } else {
+            force
+                .gravity(0.3)
+                .friction(0.5)
+                .linkDistance(function (d) { return 80 })
+                .size([width, height])
+                .charge(-300)
+                .nodes(data.nodes)
+                .links([])
+                .start();
+        }
+
     }
 
     update(store_data);
@@ -564,51 +600,49 @@ function nodeGraph() {
         addOnlyOneLink({ "source": tic.from, "target": tic.to, "tx": tic.tx })
     }
     // tic단위로 작업. timer를 리턴함.
-    function work_job_tic(timer, druation) {
+    function work_job_tic(duration) {
         timer = setInterval(() => {
             var job = queue.dequeue();
             if (job != null) {
                 cycles_per_tick(job);
             } else {
-                clearInterval(timer);
-            }
-        }, druation)
-        return timer;
-    }
-    // tic단위로 작업을 한후에 tx단위로 또 작업을 진행해야함.
-    function cycles_per_tx(tic) {
-        function t_cycles_per_tx() {
-            var shape = {
-                from: 0,
-                to: 0,
-                tx: 0
-            };
-
-            tic = $.extend({}, shape, tic);
-            setTimeout(addNode({ "name": tic.from }), 500);
-            setTimeout(addNode({ "name": tic.to }), 1000);
-            setTimeout(addLink({ "source": tic.from, "target": tic.to, "tx": tic.tx }), 1500);
-        }
-        setTimeout(t_cycles_per_tx(tic), 500);
-    }
-
-    function work_job_tx(timer, duration) {
-        timer = setInterval(() => {
-            var job = queue.dequeue();
-            if (job != null) {
-                if (typeof job === 'object') {
-                    cycles_per_tx(job);
-                } else {
-                    removeAllLink()
-                }
-            } else {
-                clearInterval(timer);
+                clearInterval(this.timer);
             }
         }, duration)
         return timer;
     }
+    // tic단위로 작업을 한후에 tx단위로 또 작업을 진행해야함.
+    function cycles_per_tx(tic) {
+        var shape = {
+            from: 0,
+            to: 0,
+            tx: 0
+        };
+        tic = $.extend({}, shape, tic);
+        setTimeout(addNode({ "name": tic.from }), 100);
+        setTimeout(addNode({ "name": tic.to }), 100);
+        setTimeout(addLink({ "source": tic.from, "target": tic.to, "tx": tic.tx }), 200);
+    }
 
-    this.duration = 3000;
+    function work_job_tx(duration) {
+        timer = setInterval(() => {
+            setTimeout(function () {
+                var job = queue.dequeue();
+                if (job != null) {
+                    if (typeof job === 'object') {
+                        cycles_per_tx(job);
+                    } else {
+                        removeAllLink()
+                    }
+                } else {
+                    clearInterval(timer);
+                }
+            }, 0)
+        }, duration)
+        return timer;
+    }
+
+    this.duration = 50;
 
     this.timer = null;
     var queue = new Queue();
@@ -618,18 +652,18 @@ function nodeGraph() {
 
     this.expression_per_tx = function (data) {
         this.isTX = true;
-        this.duration = 500;
         this.txs = data;
         queue = new Queue();
         removeAllNode();
         clearInterval(this.timer);
         this.txs.forEach((tx) => {
+            queue.enqueue("end TX");
             tx.forEach((v) => {
                 queue.enqueue(v);
             });
-            queue.enqueue("end TX");
+
         });
-        this.timer = work_job_tx(queue, this.duration);
+        this.timer = work_job_tx(this.duration);
     }
 
     // tic당 표현
@@ -644,16 +678,16 @@ function nodeGraph() {
             queue.enqueue(v);
         });
 
-        this.timer = work_job_tic(queue, this.duration);
+        this.timer = work_job_tic(this.duration);
     }
 
     this.toSlow = function () {
         clearInterval(this.timer);
         this.duration = this.duration + 50 > 60000 ? 60000 : this.duration + 50;
         if (this.isTX) {
-            this.timer = work_job_tx(queue, this.duration);
+            work_job_tx(this.duration);
         } else {
-            this.timer = work_job_tic(queue, this.duration);
+            work_job_tic(this.duration);
         }
     }
 
@@ -661,9 +695,9 @@ function nodeGraph() {
         clearInterval(this.timer);
         this.duration = this.duration - 50 > 0 ? this.duration - 50 : 0;
         if (this.isTX) {
-            this.timer = work_job_tx(queue, this.duration);
+            work_job_tx(this.duration);
         } else {
-            this.timer = work_job_tic(queue, this.duration);
+            work_job_tic(this.duration);
         }
     }
 
@@ -677,14 +711,14 @@ function nodeGraph() {
                 this.expression_per_tx(this.txs);
             } else {
                 clearInterval(this.timer);
-                this.timer = work_job_tx(queue, this.duration);
+                work_job_tx(this.duration);
             }
         } else {
             if (queue.isEmpty()) {
                 this.expression_per_tic(this.data)
             } else {
                 clearInterval(this.timer);
-                this.timer = work_job_tic(queue, this.duration);
+                work_job_tic(this.duration);
             }
         }
     }
