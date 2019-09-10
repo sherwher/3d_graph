@@ -245,23 +245,6 @@ function nodeGraph() {
             $("#round" + n.id)
                 .attr("fill", circleColor(n))
                 .attr('r', circleSize(n))
-
-            var txs = Array.from(n.txs.keys());
-            // tx_dot이 계속 겹쳐 보일 수 있으니 전체 삭제
-            svg.select("#g" + n.id).selectAll('.tx_dot').remove();
-            var boxs = store_data.maxTx - store_data.minTx + 1;
-            var boxWidth = 40 * (1 / boxs);
-
-            // boxWidth가 너무 작으면 눈에 보이지 않게 되므로 최소 1px아래로는 떨어지지 않게한다
-            var virtualBoxWidth = boxWidth < 1 ? 1 : boxWidth;
-            for (var j = 0; j < txs.length; j++) {
-                svg.select("#g" + n.id)
-                    .append('rect')
-                    .attr('class', 'tx_dot')
-                    .attr("y", -22)
-                    .attr("x", -20 + boxWidth * (txs[j] - store_data.minTx))
-                    .style("width", virtualBoxWidth)
-            }
         }
         display.allNode.value = store_data.nodes.length;
         display.minTx.value = store_data.minTx != null ? store_data.minTx : 0;
@@ -498,6 +481,46 @@ function nodeGraph() {
             .attr('visibility', 'visible')
             .attr('fill-opacity', 0.5);
 
+
+        // var txs = Array.from(n.txs.keys());
+        // tx_dot이 계속 겹쳐 보일 수 있으니 전체 삭제
+        // svg.select("#g" + n.id).selectAll('.tx_dot').remove();
+
+
+        // // boxWidth가 너무 작으면 눈에 보이지 않게 되므로 최소 1px아래로는 떨어지지 않게한다
+        // var virtualBoxWidth = boxWidth < 1 ? 1 : boxWidth;
+        // for (var j = 0; j < txs.length; j++) {
+        //     svg.select("#g" + n.id)
+        //         .append('rect')
+        //         .attr('class', 'tx_dot')
+        //         .attr("y", -22)
+        //         .attr("x", -20 + boxWidth * (txs[j] - store_data.minTx))
+        //         .style("width", virtualBoxWidth)
+        // }
+        var boxs = store_data.maxTx - store_data.minTx + 1;
+        var boxWidth = 40 * (1 / boxs);
+        var virtualBoxWidth = boxWidth < 1 ? 1 : boxWidth;
+        var tx = nodeEnter
+            .selectAll('.node')
+            .data(function (d) {
+                return Array.from(d.txs.keys());
+            });
+        tx.enter()
+            .append('rect')
+            .attr('class', 'tx_dot')
+            .attr("y", -22)
+            .attr("x", function (d) {
+                return -20 + boxWidth * (d - store_data.minTx);
+            })
+            .style("width", function (d) {
+                return virtualBoxWidth;
+            });
+
+        tx.exit().remove();
+        // var area = d3.svg.area()
+        //     .interpolate("basis")
+        //     .x(function (d) { return x(d.date); })
+        //     .y1(function (d) { return y(d.price); });
         var showTooltip = function (d) {
             display.selectNode.value = d.name;
             var txs = Array.from(d.txs.keys()).reverse();
