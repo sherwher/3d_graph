@@ -108,7 +108,7 @@
         var tx = [
 
         ]
-        for (var z = 1; z < 3; z++) {
+        for (var z = 1; z < 20; z++) {
             var tics = [];
             var tx_ram = randomRange(1, 20);
             for (var j = 1; j < 47; j++) {
@@ -124,8 +124,12 @@
         }
         graph.expression_per_tx(tx);
 
+
+
+
+
         // json {to: , from: , tx: } 형태의 리스트를 넣으면 차트를 그림
-        // graph.expression_per_tic(data);
+        // graph.expression_per_tick(data);
 
 
 
@@ -133,7 +137,7 @@
 
         // 그리기 초기화
         $('#btn_init').on('click', function (e) {
-            graph.expression_per_tic(data);
+            graph.expression_per_tick(data);
         });
 
         // 그리기 빠르게 +1초(Max 60초)
@@ -161,7 +165,7 @@
         // tic당 그리기
         $('#btn_step').on('click', function (e) {
             // graph.stepTic()
-            graph.stepTic()
+            graph.stepTick()
         });
 
         $('#btn_ableLink').on('click', function (e) {
