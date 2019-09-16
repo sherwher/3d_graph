@@ -16,7 +16,7 @@
         }
 
         .link {
-            stroke: #999;
+            stroke: #777;
             stroke-opacity: 0.3;
         }
 
@@ -52,6 +52,10 @@
         .graph {
             height: 900px;
             width: 1500px;
+        }
+
+        .area {
+            fill: lightsteelblue;
         }
     </style>
 </head>
@@ -105,33 +109,58 @@
         //     });
         // }
 
-        var tx = [
+        // var tx = []
+        // for (var z = 1; z < 50; z++) {
+        //     var tics = [];
+        //     var tx_ram = z;
+        //     for (var j = 1; j < 47; j++) {
+        //         for (var i = 1; i < 8; i++) {
+        //             tics.push({
+        //                 "type": 'tx_detect',
+        //                 "from": 'node_' + j,
+        //                 "to": 'node_' + (((j - 1) * 7) + i + 1),
+        //                 "tx": 'tx' + String(tx_ram).padStart(2, '0')
+        //             });
+        //         }
+        //     }
+        //     tx.push(tics);
+        // if (z >= 4) {
+        //     tics.push({
+        //         "type": 'tx_detect',
+        //         "from": null,
+        //         "to": null,
+        //         "tx": 'tx' + String(tx_ram - 3).padStart(2, '0')
+        //     });
+        // }
+        // }
+        // graph.expression_per_tx(tx);
 
-        ]
+        var tics = [];
+        var tx_ram = 1;
+
+
         for (var z = 1; z < 50; z++) {
-            var tics = [];
-            var tx_ram = randomRange(1, 20);
             for (var j = 1; j < 47; j++) {
                 for (var i = 1; i < 8; i++) {
                     tics.push({
+                        "type": 'tx_detect',
                         "from": 'node_' + j,
                         "to": 'node_' + (((j - 1) * 7) + i + 1),
-                        "tx": tx_ram
+                        "tx": 'tx' + String(z).padStart(2, '0')
                     });
                 }
             }
-            tx.push(tics);
+            if (z >= 4) {
+                tics.push({
+                    "type": 'tx_detect',
+                    "from": null,
+                    "to": null,
+                    "tx": 'tx' + String(z - 3).padStart(2, '0')
+                });
+            }
         }
-        graph.expression_per_tx(tx);
 
-
-
-
-
-        // json {to: , from: , tx: } 형태의 리스트를 넣으면 차트를 그림
-        // graph.expression_per_tick(data);
-
-
+        graph.expression_per_tick(tics);
 
         $('#duration').text(graph.duration);
 

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        @line-color: #3880aa; //blue
+
+        svg text {
+            font-family: Helvetica, Arial, Verdana, sans-serif;
+            fill: #666;
+            font-size: 12px;
+        }
+
+        .line {
+            fill: none;
+            stroke: @line-color;
+            stroke-width: 3px;
+        }
+
+        .path-fill {
+            fill: @line-color;
+            opacity: 0.3;
+            stroke: none;
+        }
+
+        .axis {
+            & .domain {
+                fill: none;
+            }
+
+            & .tick line {
+                stroke: #EEE;
+                stroke-width: 1px;
+            }
+        }
+
+        .tooltip {
+            &-line {
+                fill: none;
+                stroke: @line-color;
+                stroke-width: 1px;
+                stroke-dasharray: 3px;
+            }
+
+            &-point {
+                fill: @line-color;
+                stroke: @line-color;
+                stroke-width: 1px;
+            }
+        }
+
+        .avg-line {
+            fill: none;
+            stroke: @line-color;
+            stroke-width: 1px;
+            stroke-dasharray: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chart"></div>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+        let data = [{
+            tx: 1,
+            points: 1
+        }, {
+            tx: 2,
+            points: 0
+        }, {
+            tx: 3,
+            points: 0
+        }, {
+            tx: 4,
+            points: 1
+        }, {
+            tx: 5,
+            points: 1
+        }, {
+            tx: 6,
+            points: 0
+        }, {
+            tx: 7,
+            points: 0
+        }, {
+            tx: 8,
+            points: 1
+        }, {
+            tx: 9,
+            points: 1
+        }, {
+            tx: 10,
+            points: 1
+        }, {
+            tx: 11,
+            points: 1
+        }];
+
+        var width = 40,
+            height = 5;
+
+        let x = d3.scale.linear().range([0, width]),
+            y = d3.scale.linear().range([height, 0]);
+
+        x.domain([
+            1,
+            12
+        ]);
+        y.domain([0, 1]);
+
+        /*let line = d3.svg.line().interpolate("step-after")
+                        .x(d => x(d.start_date))
+                        .y(d => y(d.points));*/
+
+        let fill = `M0,5`;
+
+        let svg = d3.select("#chart").append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+
+        data.forEach((d, i) => {
+            let y0 = y(d.points),
+                x0 = x(d.tx + 1);
+
+            fill += `V${y0}H${x0}`;
+        });
+
+        fill += `V5Z`;
+
+        svg.append("path")
+            .attr("class", "path-fill")
+            .attr("d", fill);
+
+    </script>
+</body>
+
+</html>

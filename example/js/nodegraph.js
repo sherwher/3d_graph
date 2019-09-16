@@ -3,13 +3,14 @@ var graph = {}
 
 
 function nodeGraph() {
-    var ableLink = true;
+    var ableLink = false;
 
     var store_data = {
         nodes: [],
         links: [],
         minTx: null,
         maxTx: null,
+        txs: new Map()
     }
 
     var display = {
@@ -18,15 +19,15 @@ function nodeGraph() {
             value: 0,
             prefix: '노드수 : '
         },
-        maxTx: {
-            id: 'maxTx',
+        minmaxTx: {
+            id: 'minmaxTx',
             value: 0,
-            prefix: '최대 TX : '
+            prefix: '최소TX / 최대TX : '
         },
-        minTx: {
-            id: 'minTx',
+        txlength: {
+            id: 'txlength',
             value: 0,
-            prefix: '최소 TX : '
+            prefix: '표시 TX수 : '
         },
         to: {
             id: 'to',
@@ -65,6 +66,7 @@ function nodeGraph() {
         }
         return null;
     }
+
     // 노드를 더한다
     function addNode(node) {
         if (findNode(store_data, node.name) == null) {
@@ -85,19 +87,9 @@ function nodeGraph() {
 
     // 링크를 더한다.
     function addLink(link) {
-        if (store_data.minTx == null || store_data.maxTx == null) {
-            store_data.minTx = link.tx;
-            store_data.maxTx = link.tx;
-        } else {
-            if (store_data.minTx >= link.tx) {
-                store_data.minTx = link.tx;
-            }
-
-            if (store_data.maxTx < link.tx) {
-                store_data.maxTx = link.tx;
-            }
-        }
-
+        store_data.txs.set(link.tx, link.tx);
+        store_data.minTx = Array.from(store_data.txs.keys()).sort()[0];
+        store_data.maxTx = Array.from(store_data.txs.keys()).sort().reverse()[0];
         for (var j = 0; j < store_data.nodes.length; j++) {
             if (link.source == store_data.nodes[j].name) {
                 store_data.nodes[j].source = true;
@@ -121,18 +113,9 @@ function nodeGraph() {
     // 링크를 더하되 기존 링크는 삭제한다.
     function addOnlyOneLink(link) {
         store_data.links = [];
-        if (store_data.minTx == null || store_data.maxTx == null) {
-            store_data.minTx = link.tx;
-            store_data.maxTx = link.tx;
-        } else {
-            if (store_data.minTx >= link.tx) {
-                store_data.minTx = link.tx;
-            }
-
-            if (store_data.maxTx < link.tx) {
-                store_data.maxTx = link.tx;
-            }
-        }
+        store_data.txs.set(link.tx, link.tx);
+        store_data.minTx = Array.from(store_data.txs.keys()).sort()[0];
+        store_data.maxTx = Array.from(store_data.txs.keys()).sort().reverse()[0];
         for (var j = 0; j < store_data.nodes.length; j++) {
             if (link.source == store_data.nodes[j].name) {
                 store_data.nodes[j].source = true;
@@ -178,6 +161,7 @@ function nodeGraph() {
         keepNodesOnTop();
     }
 
+    // 노드를 처리(데이터로만 저장 -> 렌더링은 한번에 진행)
     function pushNodeData(node) {
         if (findNode(store_data, node.name) == null) {
             node.source = false;
@@ -190,20 +174,11 @@ function nodeGraph() {
         }
     }
 
+    // 링크를 처리(데이터로만 저장 -> 렌더링은 한번에 진행)
     function pushLinkData(link) {
-        if (store_data.minTx == null || store_data.maxTx == null) {
-            store_data.minTx = link.tx;
-            store_data.maxTx = link.tx;
-        } else {
-            if (store_data.minTx >= link.tx) {
-                store_data.minTx = link.tx;
-            }
-
-            if (store_data.maxTx < link.tx) {
-                store_data.maxTx = link.tx;
-            }
-        }
-
+        store_data.txs.set(link.tx, link.tx);
+        store_data.minTx = Array.from(store_data.txs.keys()).sort()[0];
+        store_data.maxTx = Array.from(store_data.txs.keys()).sort().reverse()[0];
         for (var j = 0; j < store_data.nodes.length; j++) {
             if (link.source == store_data.nodes[j].name) {
                 store_data.nodes[j].source = true;
@@ -215,40 +190,101 @@ function nodeGraph() {
             }
 
         }
+        // d.source.id + "-" + d.target.id
+        console.log(d3.select("#" + link.source + "-" + link.target))
+        d3.select("#" + link.source + "-" + link.target).style("stroke", "#777");
         display.to.value = link.target;
         display.from.value = link.source;
         display.tx.value = link.tx;
         store_data.links.push(link);
     }
 
+    // 다중 노드와 링크를 처리
     function multiAddNodeAndLink(datas) {
         datas.forEach((tick) => {
-            pushNodeData({ "name": tick.to });
-            pushNodeData({ "name": tick.from });
-            pushLinkData({ "source": tick.from, "target": tick.to, "tx": tick.tx });
+            if (tick.to == null || tick.from == null) {
+                store_data.txs.delete(tick.tx);
+            } else {
+                pushNodeData({ "name": tick.to });
+                pushNodeData({ "name": tick.from });
+                pushLinkData({ "source": tick.from, "target": tick.to, "tx": tick.tx });
+            }
         });
         update(store_data);
         customUpdate();
         keepNodesOnTop();
     }
 
+
+    function multiAddNodeAndLinkRemove(datas) {
+        removeAllLink();
+        datas.forEach((tick) => {
+            if (tick.to == null || tick.from == null) {
+                console.log('delete', tick.tx)
+                store_data.txs.delete(tick.tx);
+            } else {
+                pushNodeData({ "name": tick.to });
+                pushNodeData({ "name": tick.from });
+                pushLinkData({ "source": tick.from, "target": tick.to, "tx": tick.tx });
+            }
+        });
+        update(store_data);
+        customUpdate();
+        keepNodesOnTop();
+    }
+
+
     // 현재 그래프에 맞게 custom하게 처리한 부분
     function customUpdate() {
+
+        let x = d3.scale.linear().range([-20, 20]),
+            y = d3.scale.linear().range([-22, -17]);
+
+        x.domain([0, Array.from(store_data.txs.keys()).length]);
+        y.domain([0, 1]);
         /**
         node가 highlight되는 부분 처리
         */
         for (var i in store_data.nodes) {
 
             var n = store_data.nodes[i];
-
             // 하일라이트처리
-            $("#round" + n.id)
+            d3.select("#round" + n.id)
+                .transition()
+                .duration(30)
                 .attr("fill", circleColor(n))
                 .attr('r', circleSize(n))
+
+            // tx박스 전체 삭제    
+            svg.select("#g" + n.id).selectAll('.path-fill').remove();
+
+            // tx박스 설정(area그래프 path로 처리)
+            d3.select('#g' + n.id)
+                .append("path")
+                .attr("class", "path-fill")
+                .attr("d", function (d) {
+                    var xmap = Array.from(store_data.txs.keys()).sort();
+                    let fill = `M-20,-22`;
+                    for (var i = 0; i < xmap.length; i++) {
+                        let y0, x0;
+                        if (d.txs.has(xmap[i])) {
+                            y0 = y(1);
+                            x0 = x(i + 1);
+                        } else {
+                            y0 = y(0);
+                            x0 = x(i + 1);
+                        }
+                        fill += `V${y0}H${x0}`;
+                    }
+                    fill += `V-22Z`;
+                    return fill;
+                });
+
         }
+
         display.allNode.value = store_data.nodes.length;
-        display.minTx.value = store_data.minTx != null ? store_data.minTx : 0;
-        display.maxTx.value = store_data.maxTx != null ? store_data.maxTx : 0;
+        display.minmaxTx.value = (store_data.minTx != null ? store_data.minTx : 0) + ' / ' + (store_data.maxTx != null ? store_data.maxTx : 0);
+        display.txlength.value = Array.from(store_data.txs.keys()).length;
 
         for (var key in display) {
             svg.select('#' + display[key].id).text(display[key].prefix + display[key].value)
@@ -290,7 +326,7 @@ function nodeGraph() {
         }
     }
 
-    var tooltipWidth = 220;
+    var tooltipWidth = 250;
     var tooltipHeight = 190;
     var tooltipY = 10;
     var tooltipMargin = 10;
@@ -319,8 +355,8 @@ function nodeGraph() {
         .attr("fill", "#ffffff")
 
     svg.append("text")
-        .attr("id", "maxTx")
-        .text("최대 TX : ")
+        .attr("id", "txlength")
+        .text("표시 TX수 : ")
         .attr("x", width - tooltipWidth + "px")
         .attr("y", tooltipY + fontMargin * 2 + "px")
         .attr("font-family", "sans-serif")
@@ -328,8 +364,8 @@ function nodeGraph() {
         .attr("fill", "#ffffff")
 
     svg.append("text")
-        .attr("id", "minTx")
-        .text("최소 TX : ")
+        .attr("id", "minmaxTx")
+        .text("최소TX / 최대TX : ")
         .attr("x", width - tooltipWidth + "px")
         .attr("y", tooltipY + fontMargin * 3 + "px")
         .attr("font-family", "sans-serif")
@@ -408,11 +444,10 @@ function nodeGraph() {
             .attr('y2', function (d) { return d.target.y; });
     });
 
-
-
     function update(data) {
         data.nodes.forEach(function (d, i) {
             d.id = d.name;
+            d.index = i;
         });
 
         link = svg.selectAll("line")
@@ -429,6 +464,7 @@ function nodeGraph() {
             });
 
         link.enter().append("line")
+            .style("stroke", "#777")
             .attr("id", function (d) {
                 return d.source.id + "-" + d.target.id;
             })
@@ -437,7 +473,10 @@ function nodeGraph() {
             })
             .attr("class", "link");
 
-        link.exit().remove();
+        link
+            .transition()
+            .duration(100)
+            .style("stroke", "#fff")
 
         node = svg.selectAll("g.node")
             .data(data.nodes, function (d) {
@@ -481,46 +520,6 @@ function nodeGraph() {
             .attr('visibility', 'visible')
             .attr('fill-opacity', 0.5);
 
-
-        // var txs = Array.from(n.txs.keys());
-        // tx_dot이 계속 겹쳐 보일 수 있으니 전체 삭제
-        // svg.select("#g" + n.id).selectAll('.tx_dot').remove();
-
-
-        // // boxWidth가 너무 작으면 눈에 보이지 않게 되므로 최소 1px아래로는 떨어지지 않게한다
-        // var virtualBoxWidth = boxWidth < 1 ? 1 : boxWidth;
-        // for (var j = 0; j < txs.length; j++) {
-        //     svg.select("#g" + n.id)
-        //         .append('rect')
-        //         .attr('class', 'tx_dot')
-        //         .attr("y", -22)
-        //         .attr("x", -20 + boxWidth * (txs[j] - store_data.minTx))
-        //         .style("width", virtualBoxWidth)
-        // }
-        var boxs = store_data.maxTx - store_data.minTx + 1;
-        var boxWidth = 40 * (1 / boxs);
-        var virtualBoxWidth = boxWidth < 1 ? 1 : boxWidth;
-        var tx = nodeEnter
-            .selectAll('.node')
-            .data(function (d) {
-                return Array.from(d.txs.keys());
-            });
-        tx.enter()
-            .append('rect')
-            .attr('class', 'tx_dot')
-            .attr("y", -22)
-            .attr("x", function (d) {
-                return -20 + boxWidth * (d - store_data.minTx);
-            })
-            .style("width", function (d) {
-                return virtualBoxWidth;
-            });
-
-        tx.exit().remove();
-        // var area = d3.svg.area()
-        //     .interpolate("basis")
-        //     .x(function (d) { return x(d.date); })
-        //     .y1(function (d) { return y(d.price); });
         var showTooltip = function (d) {
             display.selectNode.value = d.name;
             var txs = Array.from(d.txs.keys()).reverse();
@@ -540,11 +539,6 @@ function nodeGraph() {
             .on("mouseleave", hideTooltip)
 
         node.exit().remove();
-
-        // force
-        //     .nodes(data.nodes)
-        //     .links(data.links)
-        //     .start();
 
         if (ableLink) {
             d3.selectAll("g.node").call(force.drag);
@@ -593,24 +587,12 @@ function nodeGraph() {
         var timer = setInterval(() => {
             var job = queue.dequeue();
             if (job != null) {
-                cycles_per_tick(job);
+                multiAddNodeAndLinkRemove(job);
             } else {
                 clearInterval(this.timer);
             }
-        }, duration)
+        }, 50)
         return timer;
-    }
-    // tic단위로 작업을 한후에 tx단위로 또 작업을 진행해야함.
-    function cycles_per_tx(tick) {
-        var shape = {
-            from: 0,
-            to: 0,
-            tx: 0
-        };
-        tick = $.extend({}, shape, tick);
-        setTimeout(addNode({ "name": tick.from }), 10);
-        setTimeout(addNode({ "name": tick.to }), 10);
-        setTimeout(addLink({ "source": tick.from, "target": tick.to, "tx": tick.tx }), 20);
     }
 
     function work_job_tx(duration) {
@@ -619,7 +601,6 @@ function nodeGraph() {
             if (job != null) {
                 if (typeof job === 'object') {
                     multiAddNodeAndLink([job]);
-                    // cycles_per_tx(job);
                 } else {
                     removeAllLink()
                 }
@@ -644,27 +625,27 @@ function nodeGraph() {
         queue = new Queue();
         removeAllNode();
         clearInterval(this.timer);
-        var test = []
         this.txs.forEach((tx) => {
             queue.enqueue("end TX");
             tx.forEach((v) => {
                 queue.enqueue(v);
-                test.push(v);
             });
         });
-        // this.timer = work_job_tx(this.duration);
-        multiAddNodeAndLink(test);
+        this.timer = work_job_tx(this.duration);
+        // multiAddNodeAndLink(test);
     }
 
     // tick당 표현
     this.expression_per_tick = function (data) {
+        var copyData = data;
+        this.ticks = [];
+        while (copyData.length > 0) {
+            this.ticks.push(copyData.splice(0, 20));
+        }
         this.isTX = false;
-        this.ticks = data;
         queue = new Queue();
-        removeAllNode();
         clearInterval(this.timer);
-
-        this.tics.forEach((v) => {
+        this.ticks.forEach((v) => {
             queue.enqueue(v);
         });
 
@@ -677,7 +658,7 @@ function nodeGraph() {
         if (this.isTX) {
             this.timer = work_job_tx(this.duration);
         } else {
-            this.timer = work_job_tick(this.duration);
+
         }
     }
 
@@ -687,7 +668,7 @@ function nodeGraph() {
         if (this.isTX) {
             this.timer = work_job_tx(this.duration);
         } else {
-            this.timer = work_job_tick(this.duration);
+
         }
     }
 
