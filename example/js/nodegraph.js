@@ -3,7 +3,19 @@ var graph = {}
 
 
 function nodeGraph() {
+
+    this.duration = 50;
+    this.timer = null;
+    this.ticks = [];
+    this.txs = [];
+    var isTX = false;
+
+    var queue = new Queue();
     var ableLink = false;
+    var lineDuration = 200;
+    var nodeDuration = 100;
+    var createNodeX = 200;
+    var createNodeY = 200;
 
     var store_data = {
         nodes: [],
@@ -73,8 +85,8 @@ function nodeGraph() {
             node.source = false;
             node.target = false;
             //노드 생성 위치
-            node.x = 200;
-            node.y = 200;
+            node.x = createNodeX;
+            node.y = createNodeY;
             node.txs = new Map();
             store_data.nodes.push(node);
             update(store_data);
@@ -167,8 +179,8 @@ function nodeGraph() {
             node.source = false;
             node.target = false;
             //노드 생성 위치
-            node.x = 200;
-            node.y = 200;
+            node.x = createNodeX;
+            node.y = createNodeY;
             node.txs = new Map();
             store_data.nodes.push(node);
         }
@@ -190,9 +202,9 @@ function nodeGraph() {
             }
 
         }
-        // d.source.id + "-" + d.target.id
-        console.log(d3.select("#" + link.source + "-" + link.target))
-        d3.select("#" + link.source + "-" + link.target).style("stroke", "#777");
+        //Link가 연결될때 기존의 라인을 초기화
+        d3.select("#" + link.source + "-" + link.target).style("stroke", "#777").style("stroke-width", 3);
+
         display.to.value = link.target;
         display.from.value = link.source;
         display.tx.value = link.tx;
@@ -215,13 +227,15 @@ function nodeGraph() {
         keepNodesOnTop();
     }
 
-
+    // 다중 노드와 링크를 처리하기전 모든 링크를 삭제
     function multiAddNodeAndLinkRemove(datas) {
         removeAllLink();
         datas.forEach((tick) => {
             if (tick.to == null || tick.from == null) {
-                console.log('delete', tick.tx)
                 store_data.txs.delete(tick.tx);
+                store_data.nodes.forEach((v) => {
+                    v.txs.delete(tick.tx);
+                })
             } else {
                 pushNodeData({ "name": tick.to });
                 pushNodeData({ "name": tick.from });
@@ -251,7 +265,7 @@ function nodeGraph() {
             // 하일라이트처리
             d3.select("#round" + n.id)
                 .transition()
-                .duration(30)
+                .duration(nodeDuration)
                 .attr("fill", circleColor(n))
                 .attr('r', circleSize(n))
 
@@ -473,10 +487,19 @@ function nodeGraph() {
             })
             .attr("class", "link");
 
-        link
-            .transition()
-            .duration(100)
-            .style("stroke", "#fff")
+        if (isTX) {
+            link
+                .exit()
+                .remove()
+        } else {
+            link
+                .transition()
+                .duration(lineDuration)
+                .style("stroke", "#fff")
+                .style("stroke-width", 0)
+        }
+
+
 
         node = svg.selectAll("g.node")
             .data(data.nodes, function (d) {
@@ -569,19 +592,6 @@ function nodeGraph() {
         });
     }
 
-    // job하나를 실행. 2개Node생성 1개Link생성
-    function cycles_per_tick(tic) {
-        var shape = {
-            from: 0,
-            to: 0,
-            tx: 0
-        };
-
-        tick = $.extend({}, shape, tick);
-        addNode({ "name": tick.from });
-        addNode({ "name": tick.to });
-        addOnlyOneLink({ "source": tick.from, "target": tick.to, "tx": tick.tx })
-    }
     // tick단위로 작업. timer를 리턴함.
     function work_job_tick(duration) {
         var timer = setInterval(() => {
@@ -591,7 +601,7 @@ function nodeGraph() {
             } else {
                 clearInterval(this.timer);
             }
-        }, 50)
+        }, duration)
         return timer;
     }
 
@@ -611,16 +621,10 @@ function nodeGraph() {
         return timer;
     }
 
-    this.duration = 50;
 
-    this.timer = null;
-    var queue = new Queue();
-    this.ticks = [];
-    this.txs = [];
-    this.isTX = false;
 
     this.expression_per_tx = function (data) {
-        this.isTX = true;
+        isTX = true;
         this.txs = data;
         queue = new Queue();
         removeAllNode();
@@ -632,18 +636,20 @@ function nodeGraph() {
             });
         });
         this.timer = work_job_tx(this.duration);
-        // multiAddNodeAndLink(test);
     }
+
+    var secondPerDuration = (this.duration + 0) / 1000;
 
     // tick당 표현
     this.expression_per_tick = function (data) {
+        isTX = false;
+        var term = Math.ceil(data.length * secondPerDuration);
         var copyData = data;
         this.ticks = [];
         while (copyData.length > 0) {
-            this.ticks.push(copyData.splice(0, 20));
+            this.ticks.push(copyData.splice(0, term));
         }
-        this.isTX = false;
-        queue = new Queue();
+        // queue = new Queue();
         clearInterval(this.timer);
         this.ticks.forEach((v) => {
             queue.enqueue(v);
@@ -653,9 +659,9 @@ function nodeGraph() {
     }
 
     this.toSlow = function () {
-        clearInterval(this.timer);
-        this.duration = this.duration + 50 > 60000 ? 60000 : this.duration + 50;
-        if (this.isTX) {
+        if (isTX) {
+            clearInterval(this.timer);
+            this.duration = this.duration + 50 > 60000 ? 60000 : this.duration + 50;
             this.timer = work_job_tx(this.duration);
         } else {
 
@@ -663,9 +669,9 @@ function nodeGraph() {
     }
 
     this.toFast = function () {
-        clearInterval(this.timer);
-        this.duration = this.duration - 50 > 0 ? this.duration - 50 : 50;
-        if (this.isTX) {
+        if (isTX) {
+            clearInterval(this.timer);
+            this.duration = this.duration - 50 > 0 ? this.duration - 50 : 50;
             this.timer = work_job_tx(this.duration);
         } else {
 
@@ -677,7 +683,7 @@ function nodeGraph() {
     }
 
     this.start = function () {
-        if (this.isTX) {
+        if (isTX) {
             if (queue.isEmpty()) {
                 this.expression_per_tx(this.txs);
             } else {
@@ -696,7 +702,7 @@ function nodeGraph() {
 
     this.stepTick = function () {
         clearInterval(this.timer);
-        if (this.isTX) {
+        if (isTX) {
             var job = queue.dequeue();
             if (job != null) {
                 if (typeof job === 'object') {
