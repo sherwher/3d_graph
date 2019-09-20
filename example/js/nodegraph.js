@@ -4,19 +4,28 @@ var graph = {}
 
 function nodeGraph() {
 
-    this.duration = 25;
-    this.interval = 25;
-    this.timer = null;
-    this.ticks = [];
-    this.txs = [];
-    var isTX = false;
 
+    // timer
+    this.timer = null;
+    // 특정 단위로 진행할 것인가?
+    var isTX = false;
+    // 특정 단위로 진행시 데이터
+    var txs = [];
+    // 차트그리기의 시작과 정지를 담당
     var queue = new Queue();
-    var ableLink = false;
+    // 큐에서 데이터를 꺼내는 시간
+    this.duration = 25;
+    // 빠르기를 조절할 interval
+    this.interval = 25;
+    // line을 그리는 애니메이션 시간 보통 큐에서 데이터를 꺼내는 시간의 4배
     var lineDuration = this.duration * 4;
+    // Node를 그리는 애니메이션 시간 보통 큐에서 데이터를 꺼내는 시간의 2배
     var nodeDuration = this.duration * 2;
+    // 노드가 처음 생성되는 좌표
     var createNodeX = 200;
     var createNodeY = 200;
+    // 링크를 사용 할 것인가?
+    var ableLink = false;
 
     var store_data = {
         nodes: [],
@@ -25,6 +34,8 @@ function nodeGraph() {
         maxTx: null,
         txs: new Map()
     }
+
+    var table_data = []
 
     var display = {
         allNode: {
@@ -419,7 +430,9 @@ function nodeGraph() {
     function scrollTopTween(scrollTop) {
         return function () {
             var i = d3.interpolateNumber(this.scrollTop, scrollTop);
-            return function (t) { this.scrollTop = i(t); };
+            return function (t) {
+                this.scrollTop = i(t);
+            };
         };
     }
 
@@ -560,7 +573,6 @@ function nodeGraph() {
         }
 
     }
-
     update(store_data);
 
     function keepNodesOnTop() {
@@ -588,7 +600,7 @@ function nodeGraph() {
     }
 
     // tx단위로 작업. timer를 리턴함
-    function work_job_tx(duration) {
+    function work_job_onetick(duration) {
         var timer = setInterval(() => {
             var job = queue.dequeue();
             if (job != null) {
@@ -605,31 +617,31 @@ function nodeGraph() {
     }
 
 
-
-    this.expression_per_tx = function (data, duration, interval) {
+    // 한번에 데이터를 받아서 tick단위로 나눈후 실행
+    this.expression_onetick = function (data, duration, interval) {
         this.duration = duration ? duration : 50;
         this.interval = interval ? interval : 50;
         isTX = true;
-        this.txs = data;
+        txs = data;
         lineDuration = 0;
         nodeDuration = 0;
         queue = new Queue();
         removeAllNode();
         clearInterval(this.timer);
         var i = 0;
-        this.txs.forEach((tx) => {
+        txs.forEach((tx) => {
             queue.enqueue("end TX");
             tx.forEach((v) => {
                 v.index = i++;
                 queue.enqueue(v);
             });
         });
-        this.timer = work_job_tx(this.duration);
+        this.timer = work_job_onetick(this.duration);
     }
 
     var secondPerDuration = this.duration / 1500;
 
-    // 실시간 표현
+    // 실시간 표현 tick은 여러개가 될 수 있음
     this.expression_realtime = function (data, duration, interval) {
         this.duration = duration;
         this.interval = interval;
@@ -639,24 +651,25 @@ function nodeGraph() {
             v.index = i
             return v;
         });
-        this.ticks = [];
+        var ticks = [];
         while (copyData.length > 0) {
-            this.ticks.push(copyData.splice(0, term));
+            ticks.push(copyData.splice(0, term));
         }
         // queue = new Queue();
         clearInterval(this.timer);
-        this.ticks.forEach((v, i) => {
+        ticks.forEach((v, i) => {
             queue.enqueue(v);
         });
 
         this.timer = work_job_realtime(this.duration);
     }
 
+
     this.toSlow = function () {
         if (isTX) {
             clearInterval(this.timer);
             this.duration = this.duration + this.interval > 60000 ? 60000 : this.duration + this.interval;
-            this.timer = work_job_tx(this.duration);
+            this.timer = work_job_onetick(this.duration);
         } else {
 
         }
@@ -666,7 +679,7 @@ function nodeGraph() {
         if (isTX) {
             clearInterval(this.timer);
             this.duration = this.duration - this.interval > 0 ? this.duration - this.interval : this.interval;
-            this.timer = work_job_tx(this.duration);
+            this.timer = work_job_onetick(this.duration);
         } else {
 
         }
@@ -679,10 +692,10 @@ function nodeGraph() {
     this.start = function () {
         if (isTX) {
             if (queue.isEmpty()) {
-                this.expression_per_tx(this.txs);
+                this.expression_onetick(this.txs);
             } else {
                 clearInterval(this.timer);
-                this.timer = work_job_tx(this.duration);
+                this.timer = work_job_onetick(this.duration);
             }
         } else {
             if (queue.isEmpty()) {
