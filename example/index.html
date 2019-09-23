@@ -118,6 +118,8 @@
         <button id="btn_step">다음</button>
         <button id="btn_ableLink">링크사용</button>
         <button id="btn_disableLink">링크사용안함</button>
+        <button id="btn_scrollstop">스크롤정지</button>
+        <button id="btn_scrollstart">스크롤시작</button>
         <span id="duration"></span>
         <p></p>
     </div>
@@ -221,49 +223,61 @@
                 }
 
                 if ((((i - 1) * 7) + j + 1) > 302) {
-                    tx_map.set(tx_ram, tx_ram);
-                    if (tx_ram % 2 == 0) {
-                        var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-                        var key = Array.from(tx_map.keys())[random];
-                        tx_map.delete(key);
+                    // tx_map.set(tx_ram, tx_ram);
+                    // if (tx_ram % 2 == 0) {
+                    //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                    //     var key = Array.from(tx_map.keys())[random];
+                    //     tx_map.delete(key);
+                    //     tics.push({
+                    //         "type": 'tx_detected_in_block',
+                    //         "from": null,
+                    //         "to": null,
+                    //         "tx": 'tx' + String(key).padStart(4, '0')
+                    //     });
+                    // }
+                    // if (tx_ram % 3 == 0) {
+                    //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                    //     var key = Array.from(tx_map.keys())[random];
+                    //     tx_map.delete(key);
+                    //     tics.push({
+                    //         "type": 'tx_detected_in_block',
+                    //         "from": null,
+                    //         "to": null,
+                    //         "tx": 'tx' + String(key).padStart(4, '0')
+                    //     });
+                    // }
+                    // if (tx_ram % 5 == 0) {
+                    //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                    //     var key = Array.from(tx_map.keys())[random];
+                    //     tx_map.delete(key);
+                    //     tics.push({
+                    //         "type": 'tx_detected_in_block',
+                    //         "from": null,
+                    //         "to": null,
+                    //         "tx": 'tx' + String(key).padStart(4, '0')
+                    //     });
+                    // }
+                    // if (tx_ram % 7 == 0) {
+                    //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                    //     var key = Array.from(tx_map.keys())[random];
+                    //     tx_map.delete(key);
+                    //     tics.push({
+                    //         "type": 'tx_detected_in_block',
+                    //         "from": null,
+                    //         "to": null,
+                    //         "tx": 'tx' + String(key).padStart(4, '0')
+                    //     });
+                    // }
+
+                    if (tx_ram > 2) {
+                        // var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                        // var key = Array.from(tx_map.keys())[random];
+                        // tx_map.delete(key);
                         tics.push({
                             "type": 'tx_detected_in_block',
                             "from": null,
                             "to": null,
-                            "tx": 'tx' + String(key).padStart(4, '0')
-                        });
-                    }
-                    if (tx_ram % 3 == 0) {
-                        var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-                        var key = Array.from(tx_map.keys())[random];
-                        tx_map.delete(key);
-                        tics.push({
-                            "type": 'tx_detected_in_block',
-                            "from": null,
-                            "to": null,
-                            "tx": 'tx' + String(key).padStart(4, '0')
-                        });
-                    }
-                    if (tx_ram % 5 == 0) {
-                        var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-                        var key = Array.from(tx_map.keys())[random];
-                        tx_map.delete(key);
-                        tics.push({
-                            "type": 'tx_detected_in_block',
-                            "from": null,
-                            "to": null,
-                            "tx": 'tx' + String(key).padStart(4, '0')
-                        });
-                    }
-                    if (tx_ram % 7 == 0) {
-                        var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-                        var key = Array.from(tx_map.keys())[random];
-                        tx_map.delete(key);
-                        tics.push({
-                            "type": 'tx_detected_in_block',
-                            "from": null,
-                            "to": null,
-                            "tx": 'tx' + String(key).padStart(4, '0')
+                            "tx": 'tx' + String(tx_ram - 2).padStart(4, '0')
                         });
                     }
                     tx_ram++;
@@ -316,6 +330,17 @@
 
         $('#btn_disableLink').on('click', function (e) {
             graph.setAbleLink(false);
+        });
+
+        // <button id="btn_scrollstop">스크롤정지</button>
+        // <button id="btn_scrollstart">스크롤시작</button>
+
+        $('#btn_scrollstop').on('click', function (e) {
+            graph.stopScroll();
+        });
+
+        $('#btn_scrollstart').on('click', function (e) {
+            graph.startScroll();
         });
     </script>
 </body>
