@@ -74,7 +74,15 @@
             height: 40px;
             display: flex;
             flex: 1;
-            border-bottom: 1px solid green
+            border-bottom: 1px solid green;
+        }
+
+        .selected:hover {
+            background-color: #cccccc;
+        }
+
+        .nonselected td:hover {
+            background-color: grey;
         }
 
         .bodyTable td {
@@ -86,9 +94,9 @@
             border: none;
         }
 
-        .bodyTable td:hover {
+        /* .bodyTable td:hover {
             background-color: grey;
-        }
+        } */
 
         .headerTable th {
             text-align: center;

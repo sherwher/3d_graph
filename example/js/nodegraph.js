@@ -342,23 +342,41 @@ function nodeGraph() {
                 d3.selectAll('.' + v).remove();
             }
         });
+
         table_data_flat = Array.from(table_data.values()).flat().sort((a, b) => { return a.index > b.index; });
+
         if (isStep) {
             tbody.selectAll("tr").remove();
         }
+
         var rows = tbody.selectAll("tr")
             .data(table_data_flat)
 
+        var rowsEnter = null;
 
-        var rowsEnter = rows.enter()
-            .append("tr")
-            .attr('class', function (d) {
-                return d.tx;
-            })
-            .attr('id', function (d) {
-                return d.tx + "_" + d.index;
-            });
+        if (isStep) {
+            rowsEnter = rows.enter()
+                .append("tr")
+                .attr('class', function (d) {
+                    return d.tx + " selected";
+                })
+                .attr('id', function (d) {
+                    return d.tx + "_" + d.index;
+                })
+                .on("click", function (d) {
+                    click_column('tx', d);
+                });
+        } else {
+            rowsEnter = rows.enter()
+                .append("tr")
+                .attr('class', function (d) {
+                    return d.tx + " nonselected";
+                })
+                .attr('id', function (d) {
+                    return d.tx + "_" + d.index;
+                });
 
+        }
         rowsEnter.append("td").text(function (d) {
             return d.type
         });
@@ -377,16 +395,14 @@ function nodeGraph() {
         if (isScroll) {
             var scroll_height = d3.select('#table_scroll').property("scrollHeight");
             d3.select("#table_scroll").transition().duration(25).tween("uniquetweenname", scrollTopTween(scroll_height))
+        } else {
+            if (isStep && current_link != null) {
+                // offsetTop
+                d3.select('#' + current_link.id).style('background-color', '#cccccc');
+                var scroll_height = 40 * current_link.index;
+                d3.select("#table_scroll").transition().duration(0).tween("uniquetweenname", scrollTopTween(scroll_height))
+            }
         }
-
-        if (isStep && current_link != null) {
-            // offsetTop
-            d3.select('#' + current_link.id).style('background-color', '#cccccc');
-            var scroll_height = 40 * current_link.index;
-            d3.select("#table_scroll").transition().duration(0).tween("uniquetweenname", scrollTopTween(scroll_height))
-        }
-
-
     }
 
     function chart_update(data) {
@@ -607,15 +623,17 @@ function nodeGraph() {
 
     // 단일 노드와 링크를 처리(step) - 테이블 데이터 셋팅후 노드 추가
     function addNodeAndLink(tick, update) {
-        console.log("addNodeAndLink", tick);
         pushNodeData({ "name": tick.to });
         pushNodeData({ "name": tick.from });
         pushLinkData({ "source": tick.from, "target": tick.to, "tx": tick.tx, "index": tick.index }, true);
-        current_link = tick;
-        table_update(table_data);
-        chart_update(store_data);
-        customUpdate();
-        keepNodesOnTop();
+        if (update) {
+            current_link = tick;
+            table_update(table_data);
+            chart_update(store_data);
+            customUpdate();
+            keepNodesOnTop();
+        }
+
     }
 
     // 다중 노드와 링크를 처리하기전 모든 링크를 삭제(실시간)
@@ -659,13 +677,16 @@ function nodeGraph() {
     // coulmn 클릭시
     function click_column(type, data) {
         if (isStep) {
-
+            step_queue = new Queue();
+            if (type === 'tx') {
+                var txData = table_data.get(data.tx);
+                graph.input_step_data(txData, 50, 50);
+            }
         } else {
             backup_data = $.extend({}, store_data);
             step_queue = new Queue();
             if (type === 'tx') {
                 var txData = table_data.get(data.tx);
-                console.log(data.tx, txData);
                 graph.input_step_data(txData, 50, 50);
             }
         }
@@ -676,9 +697,8 @@ function nodeGraph() {
     function work_job_onetick(duration) {
         var timer = setInterval(() => {
             var job = step_queue.dequeue();
-            console.log(job);
             if (job != null) {
-                addNodeAndLink(job);
+                addNodeAndLink(job, true);
             } else {
                 clearInterval(timer);
             }
@@ -706,7 +726,6 @@ function nodeGraph() {
     }
 
     this.input_step_data = function (data, duration, interval) {
-        console.log(data);
         this.duration = duration ? duration : 50;
         this.interval = interval ? interval : 50;
         isStep = true;
@@ -839,7 +858,7 @@ function nodeGraph() {
             } else {
                 var job = step_queue.dequeue();
                 if (job != null) {
-                    addNodeAndLink(job);
+                    addNodeAndLink(job, true);
                 }
             }
         } else {
