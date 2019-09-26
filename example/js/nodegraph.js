@@ -48,6 +48,7 @@ function nodeGraph() {
         links: [],
         txs: new Map()
     }
+    var backup_table = new Map()
 
     var table_data = new Map()
     var table_data_flat = [];
@@ -366,6 +367,18 @@ function nodeGraph() {
                 .on("click", function (d) {
                     click_column('tx', d);
                 });
+            rowsEnter.append("td").text(function (d) {
+                return d.type
+            });
+            rowsEnter.append("td").text(function (d) {
+                return d.tx
+            });
+            rowsEnter.append("td").text(function (d) {
+                return d.from
+            });
+            rowsEnter.append("td").text(function (d) {
+                return d.to
+            });
         } else {
             rowsEnter = rows.enter()
                 .append("tr")
@@ -375,22 +388,22 @@ function nodeGraph() {
                 .attr('id', function (d) {
                     return d.tx + "_" + d.index;
                 });
-
+            rowsEnter.append("td").text(function (d) {
+                return d.type
+            });
+            rowsEnter.append("td").text(function (d) {
+                return d.tx
+            }).on("click", function (d) {
+                click_column('tx', d);
+            });
+            rowsEnter.append("td").text(function (d) {
+                return d.from
+            });
+            rowsEnter.append("td").text(function (d) {
+                return d.to
+            });
         }
-        rowsEnter.append("td").text(function (d) {
-            return d.type
-        });
-        rowsEnter.append("td").text(function (d) {
-            return d.tx
-        }).on("click", function (d) {
-            click_column('tx', d);
-        });
-        rowsEnter.append("td").text(function (d) {
-            return d.from
-        });
-        rowsEnter.append("td").text(function (d) {
-            return d.to
-        });
+
         // // 스크롤을 아래로 내림
         if (isScroll) {
             var scroll_height = d3.select('#table_scroll').property("scrollHeight");
@@ -679,11 +692,13 @@ function nodeGraph() {
         if (isStep) {
             step_queue = new Queue();
             if (type === 'tx') {
+                console.log(data);
                 var txData = table_data.get(data.tx);
-                graph.input_step_data(txData, 50, 50);
+                graph.input_step_data(txData, 50, 50, data);
             }
         } else {
             backup_data = $.extend({}, store_data);
+            backup_table = new Map(table_data);
             step_queue = new Queue();
             if (type === 'tx') {
                 var txData = table_data.get(data.tx);
@@ -725,7 +740,7 @@ function nodeGraph() {
         this.timer = work_job_onetick(this.duration);
     }
 
-    this.input_step_data = function (data, duration, interval) {
+    this.input_step_data = function (data, duration, interval, spec) {
         this.duration = duration ? duration : 50;
         this.interval = interval ? interval : 50;
         isStep = true;
@@ -747,9 +762,24 @@ function nodeGraph() {
                 table_data.set(tx.tx, [tx]);
             }
             txs.push(tx);
-            step_queue.enqueue(tx);
+            if (spec) {
+                if (tx.index >= spec.index) {
+                    step_queue.enqueue(tx);
+                } else {
+                    addNodeAndLink(tx, false);
+                }
+            } else {
+                step_queue.enqueue(tx);
+            }
         });
         this.timer = work_job_onetick(this.duration);
+        if (spec) {
+            var job = step_queue.dequeue();
+            if (job != null) {
+                addNodeAndLink(job, true);
+            }
+            clearInterval(this.timer);
+        }
     }
 
     var order = 0;
