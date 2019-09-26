@@ -612,6 +612,7 @@ function nodeGraph() {
 
     // 링크를 처리(데이터로만 저장 -> 렌더링은 한번에 진행)
     function pushLinkData(link, init_line) {
+        console.log(link)
         store_data.txs.set(link.tx, link.tx);
         for (var j = 0; j < store_data.nodes.length; j++) {
             if (link.source == store_data.nodes[j].name) {
@@ -670,7 +671,6 @@ function nodeGraph() {
                 pushNodeData({ "name": tick.to });
                 pushNodeData({ "name": tick.from });
                 pushLinkData({ "source": tick.from, "target": tick.to, "tx": tick.tx, "index": tick.index }, update);
-
                 tick.id = tick.tx + "_" + tick.index;
                 if (table_data.has(tick.tx)) {
                     table_data.get(tick.tx).push(tick);
@@ -687,26 +687,7 @@ function nodeGraph() {
         }
     }
 
-    // coulmn 클릭시
-    function click_column(type, data) {
-        if (isStep) {
-            step_queue = new Queue();
-            if (type === 'tx') {
-                console.log(data);
-                var txData = table_data.get(data.tx);
-                graph.input_step_data(txData, 50, 50, data);
-            }
-        } else {
-            backup_data = $.extend({}, store_data);
-            backup_table = new Map(table_data);
-            step_queue = new Queue();
-            if (type === 'tx') {
-                var txData = table_data.get(data.tx);
-                graph.input_step_data(txData, 50, 50);
-            }
-        }
 
-    }
 
     // tx단위로 작업. timer를 리턴함
     function work_job_onetick(duration) {
@@ -786,9 +767,7 @@ function nodeGraph() {
     var secondPerDuration = this.duration / 1500;
 
     this.prepare_draw_chart = function (duration, interval, forwordingSecond) {
-        order = 0;
         secondPerDuration = forwordingSecond ? this.duration / forwordingSecond : this.duration / 1500;
-
         this.duration = duration;
         this.interval = interval;
         isStep = false;
@@ -831,6 +810,45 @@ function nodeGraph() {
         });
     }
 
+    // coulmn 클릭시
+    function click_column(type, data) {
+        if (isStep) {
+            step_queue = new Queue();
+            if (type === 'tx') {
+                var txData = table_data.get(data.tx);
+                graph.input_step_data(txData, 50, 50, data);
+            }
+        } else {
+            backup_data = $.extend({}, store_data);
+            backup_table = new Map(table_data);
+            step_queue = new Queue();
+            if (type === 'tx') {
+                var txData = table_data.get(data.tx);
+                graph.input_step_data(txData, 50, 50);
+            }
+        }
+
+    }
+
+    this.toPrev = function () {
+        if (isStep) {
+            store_data = $.extend({}, backup_data);
+            table_data = new Map(backup_table);
+            step_queue = new Queue();
+            lineDuration = this.duration * 4;
+            nodeDuration = this.duration * 2;
+            isScroll = true;
+            isStep = false;
+            clearInterval(this.timer);
+            while (!queue.isEmpty())
+                multiAddNodeAndLinkRemove(queue.dequeue(), false);
+
+            this.timer = setInterval(() => {
+                if (!queue.isEmpty())
+                    multiAddNodeAndLinkRemove(queue.dequeue(), true);
+            }, duration);
+        }
+    }
 
     this.toSlow = function () {
         if (isStep) {
