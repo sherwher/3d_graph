@@ -370,6 +370,7 @@ function nodeGraph() {
         };
     }
 
+    // 데이터 리스트를 sorting처리
     function sorting_data(a, b) {
         var sort = null;
         Array.from(sorting.keys()).forEach((v) => {
@@ -846,6 +847,8 @@ function nodeGraph() {
             }
         });
         this.timer = work_job_onetick(this.duration);
+
+        // 특정 row클릭시 하나 실행후 멈춘다.
         if (spec) {
             var job = step_queue.dequeue();
             if (job != null) {
@@ -941,6 +944,7 @@ function nodeGraph() {
 
     }
 
+    // 스텝 그래프에서 리얼 타임 그래프로 넘어갈때 처리
     function init_real_time() {
         // 테이블 헤더 원위치
         Array.from(headers.keys()).forEach((v) => {
