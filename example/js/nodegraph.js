@@ -35,6 +35,8 @@ function nodeGraph() {
     var current_link = null;
     var scroll_timer = null;
 
+    var step_type = "";
+
     var all_data = new Map();
 
     var store_data = {
@@ -91,10 +93,6 @@ function nodeGraph() {
             prefix: '최신TX : '
         }
     }
-
-
-
-
 
     // 현재 그래프에 맞게 custom하게 처리한 부분
     function customUpdate() {
@@ -176,7 +174,13 @@ function nodeGraph() {
         .append('table')
         .attr('width', twidth)
 
-    var headers = ['type', 'txid', 'from', 'to'];
+    var headers = new Map([
+        ['type', { text: "type", asc: false, desc: false }],
+        ['txid', { text: "txid", asc: false, desc: false }],
+        ['from', { text: "from", asc: false, desc: false }],
+        ['to', { text: "to", asc: false, desc: false }]
+    ]);
+    var sorting = new Map();
 
     table.append('tr')
         .append('td')
@@ -185,9 +189,42 @@ function nodeGraph() {
         .attr('width', twidth - 25)
         .append('tr')
         .selectAll('th')
-        .data(headers)
+        .data(Array.from(headers.keys()))
         .enter()
-        .append('th').text(function (column) { return column; })
+        .append('th')
+        .attr('id', function (d) {
+            return "header_" + headers.get(d).text;
+        })
+        .text(function (d) {
+            var value = headers.get(d);
+            return value.text;
+        })
+        .on('click', function (d) {
+            if (isStep && d != 'type') {
+                var value = headers.get(d);
+                var postfix = "";
+                if (!(value.desc && value.asc)) {
+                    if (value.desc && !value.asc) {
+                        value.asc = false;
+                        value.desc = false;
+                        postfix = "";
+                        sorting.delete(d);
+                    } else if (!value.desc && value.asc) {
+                        value.asc = false;
+                        value.desc = true;
+                        postfix = "▼";
+                        sorting.set(d);
+                    } else {
+                        value.asc = true;
+                        postfix = "▲";
+                        sorting.set(d);
+                    }
+                }
+                d3.select('#header_' + d).text(value.text + postfix);
+                var nodeData = Array.from(table_data.values()).flat().sort(function (a, b) { return sorting_data(a, b); });
+                graph.input_step_data(nodeData, 50, 50, nodeData[0]);
+            }
+        });
 
     var inner = table.append("tr").attr('class', 'table_remove').append("td")
         .append("div").attr("class", "scroll").attr("id", "table_scroll").attr("width", twidth).attr("style", "height:" + (theight - 40) + "px;")
@@ -333,21 +370,72 @@ function nodeGraph() {
         };
     }
 
+    function sorting_data(a, b) {
+        var sort = null;
+        Array.from(sorting.keys()).forEach((v) => {
+            var value = headers.get(v);
+            if (!value.asc || !value.desc) {
+                if (!value.asc && value.desc) {
+                    switch (v) {
+                        case 'txid':
+                            sort = sort === null ? d3.descending(a.tx, b.tx) : sort || d3.descending(a.tx, b.tx);
+                            break;
+                        case 'from':
+                            sort = sort === null ? d3.descending(a.from, b.from) : sort || d3.descending(a.from, b.from);
+                            break;
+                        case 'to':
+                            sort = sort === null ? d3.descending(a.to, b.to) : sort || d3.descending(a.to, b.to);
+                            break;
+                        default:
+                            break;
+                    }
+                } else if (value.asc && !value.desc) {
+                    switch (v) {
+                        case 'txid':
+                            sort = sort === null ? d3.ascending(a.tx, b.tx) : sort || d3.ascending(a.tx, b.tx);
+                            break;
+                        case 'from':
+                            sort = sort === null ? d3.ascending(a.from, b.from) : sort || d3.ascending(a.from, b.from);
+                            break;
+                        case 'to':
+                            sort = sort === null ? d3.ascending(a.to, b.to) : sort || d3.ascending(a.to, b.to);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        });
+        return sort === null ? a.index > b.index : sort || a.index - b.index;
+    }
 
 
     // 테이블을 업데이트 침
     function table_update(table_data) {
-        Array.from(table_data.keys()).forEach((v) => {
-            if (!store_data.txs.has(v)) {
-                table_data.delete(v);
-                d3.selectAll('.' + v).remove();
-            }
-        });
-
-        table_data_flat = Array.from(table_data.values()).flat().sort((a, b) => { return a.index > b.index; });
+        if (isStep) {
+            tbody.selectAll("tr").remove();
+        } else {
+            Array.from(table_data.keys()).forEach((v) => {
+                if (!store_data.txs.has(v)) {
+                    table_data.delete(v);
+                    d3.selectAll('.' + v).remove();
+                }
+            });
+        }
 
         if (isStep) {
             tbody.selectAll("tr").remove();
+            table_data_flat = Array.from(table_data.values())
+                .flat()
+                .sort((a, b) => {
+                    return sorting_data(a, b);
+                });
+        } else {
+            table_data_flat = Array.from(table_data.values())
+                .flat()
+                .sort((a, b) => {
+                    return a.index - b.index;
+                });
         }
 
         var rows = tbody.selectAll("tr")
@@ -365,8 +453,9 @@ function nodeGraph() {
                     return d.tx + "_" + d.index;
                 })
                 .on("click", function (d) {
-                    click_column('tx', d);
+                    click_column(step_type, d);
                 });
+
             rowsEnter.append("td").text(function (d) {
                 return d.type
             });
@@ -398,9 +487,13 @@ function nodeGraph() {
             });
             rowsEnter.append("td").text(function (d) {
                 return d.from
+            }).on("click", function (d) {
+                click_column('from', d);
             });
             rowsEnter.append("td").text(function (d) {
                 return d.to
+            }).on("click", function (d) {
+                click_column('to', d);
             });
         }
 
@@ -612,7 +705,6 @@ function nodeGraph() {
 
     // 링크를 처리(데이터로만 저장 -> 렌더링은 한번에 진행)
     function pushLinkData(link, init_line) {
-        console.log(link)
         store_data.txs.set(link.tx, link.tx);
         for (var j = 0; j < store_data.nodes.length; j++) {
             if (link.source == store_data.nodes[j].name) {
@@ -817,21 +909,51 @@ function nodeGraph() {
             if (type === 'tx') {
                 var txData = table_data.get(data.tx);
                 graph.input_step_data(txData, 50, 50, data);
+            } else if (type === 'from') {
+                var nodeData = Array.from(table_data.values()).flat();
+                graph.input_step_data(nodeData, 50, 50, data);
+            } else if (type === 'to') {
+                var nodeData = Array.from(table_data.values()).flat();
+                graph.input_step_data(nodeData, 50, 50, data);
             }
         } else {
             backup_data = $.extend({}, store_data);
             backup_table = new Map(table_data);
             step_queue = new Queue();
+            step_type = type;
             if (type === 'tx') {
                 var txData = table_data.get(data.tx);
                 graph.input_step_data(txData, 50, 50);
+            } else if (type === 'from') {
+                var nodeData = []
+                Array.from(all_data.values()).flat().map((v) => {
+                    if (data.from === v.from) nodeData.push(v);
+                });
+                graph.input_step_data(nodeData, 50, 50);
+            } else if (type === 'to') {
+                var nodeData = []
+                Array.from(all_data.values()).flat().map((v) => {
+                    if (data.to === v.to) nodeData.push(v);
+                });
+                graph.input_step_data(nodeData, 50, 50);
             }
         }
 
     }
 
+    function init_real_time() {
+        // 테이블 헤더 원위치
+        Array.from(headers.keys()).forEach((v) => {
+            var value = headers.get(v);
+            value.desc = false;
+            value.asc = false;
+            d3.select('#header_' + v).text(value.text);
+        })
+    }
+
     this.toPrev = function () {
         if (isStep) {
+            init_real_time();
             store_data = $.extend({}, backup_data);
             table_data = new Map(backup_table);
             step_queue = new Queue();
