@@ -795,25 +795,6 @@ function nodeGraph() {
         return timer;
     }
 
-    // 한번에 데이터를 받아서 tick단위로 나눈후 실행
-    this.expression_onetick = function (data, duration, interval) {
-        this.duration = duration ? duration : 50;
-        this.interval = interval ? interval : 50;
-        isStep = true;
-        txs = data;
-        lineDuration = 0;
-        nodeDuration = 0;
-        step_queue = new Queue();
-        removeAllLinkAndTX();
-        clearInterval(this.timer);
-        var i = 0;
-        txs.forEach((tx) => {
-            tx.index = i++;
-            step_queue.enqueue(tx);
-        });
-        this.timer = work_job_onetick(this.duration);
-    }
-
     this.input_step_data = function (data, duration, interval, spec) {
         this.duration = duration ? duration : 50;
         this.interval = interval ? interval : 50;
@@ -827,7 +808,6 @@ function nodeGraph() {
         removeAllLinkAndTX();
         clearInterval(this.timer);
         var i = 0;
-        console.log(data);
         data.flat().forEach((tx) => {
             tx.index = i++;
             tx.id = tx.tx + "_" + tx.index;
@@ -909,7 +889,6 @@ function nodeGraph() {
     // coulmn 클릭시
     function click_column(type, data) {
         if (isStep) {
-            console.log(type, data);
             step_queue = new Queue();
             if (type === 'tx') {
                 var txData = table_data.get(data.tx);
@@ -957,11 +936,13 @@ function nodeGraph() {
             value.desc = false;
             value.asc = false;
             d3.select('#header_' + v).text(value.text);
-        })
+        });
+
+        step_type = null;
     }
 
     this.toPrev = function () {
-        if (isStep) {
+        if (isStep && step_type) {
             init_real_time();
             store_data = $.extend({}, backup_data);
             table_data = new Map(backup_table);

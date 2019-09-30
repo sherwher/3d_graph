@@ -157,19 +157,6 @@
             return randomstring;
         }
 
-        var data = [
-
-        ];
-
-        for (var i = 0; i < 56; i++) {
-            data.push({
-                // "from": randomString(),
-                // "to": randomString(),
-                "from": 'node_' + randomRange(1, 10),
-                "to": 'node_' + randomRange(1, 10),
-                "tx": randomRange(1, 20)
-            });
-        }
         var tics = [];
         var tx_ram = 1;
         var tx = []
@@ -180,9 +167,9 @@
                 for (var i = 1; i < 8; i++) {
                     tics.push({
                         "type": 'tx_detect',
-                        "from": 'node_' + j,
-                        "to": 'node_' + (((j - 1) * 7) + i + 1),
-                        "tx": 'tx' + String(tx_ram).padStart(2, '0')
+                        "from": 'node_' + String(j).padStart(4, '0'),
+                        "to": 'node_' + String((((j - 1) * 7) + i + 1)).padStart(4, '0'),
+                        "tx": 'tx' + String(tx_ram).padStart(4, '0')
                     });
                 }
             }
@@ -192,7 +179,7 @@
                     "type": 'tx_detect',
                     "from": null,
                     "to": null,
-                    "tx": 'tx' + String(tx_ram - 3).padStart(2, '0')
+                    "tx": 'tx' + String(tx_ram - 3).padStart(4, '0')
                 });
             }
         }
@@ -303,7 +290,7 @@
 
         // 그리기 초기화
         $('#btn_init').on('click', function (e) {
-            graph.expression_per_tick(data);
+            graph.input_step_data(tx);
         });
 
         // 그리기 빠르게 +1초(Max 60초)
