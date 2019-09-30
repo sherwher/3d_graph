@@ -827,7 +827,8 @@ function nodeGraph() {
         removeAllLinkAndTX();
         clearInterval(this.timer);
         var i = 0;
-        data.forEach((tx) => {
+        console.log(data);
+        data.flat().forEach((tx) => {
             tx.index = i++;
             tx.id = tx.tx + "_" + tx.index;
             if (table_data.has(tx.tx)) {
@@ -908,6 +909,7 @@ function nodeGraph() {
     // coulmn 클릭시
     function click_column(type, data) {
         if (isStep) {
+            console.log(type, data);
             step_queue = new Queue();
             if (type === 'tx') {
                 var txData = table_data.get(data.tx);
@@ -918,6 +920,9 @@ function nodeGraph() {
             } else if (type === 'to') {
                 var nodeData = Array.from(table_data.values()).flat();
                 graph.input_step_data(nodeData, 50, 50, data);
+            } else {
+                var txData = table_data.get(data.tx);
+                graph.input_step_data(txData, 50, 50, data);
             }
         } else {
             backup_data = $.extend({}, store_data);
