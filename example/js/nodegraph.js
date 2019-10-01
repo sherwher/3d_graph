@@ -917,6 +917,7 @@ function nodeGraph() {
             var job = step_queue.dequeue();
             if (job != null) {
                 addNodeAndLink(job, true);
+                rewind_stack.push(job);
             }
             clearInterval(this.timer);
         }
