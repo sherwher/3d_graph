@@ -129,7 +129,7 @@
         <button id="btn_scrollstop">스크롤정지</button>
         <button id="btn_scrollstart">스크롤시작</button>
         <button style="right: 20px; position: absolute;" id="btn_back">이전</button>
-
+        <button style="right: 80px; position: absolute;" id="btn_rewind">뒤감기</button>
         <span id="duration"></span>
         <p></p>
     </div>
@@ -137,6 +137,7 @@
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <!-- <script src="js/sample.js" charset="utf-8"></script> -->
     <script src="js/queue.js" charset="utf-8"></script>
+    <script src="js/stack.js" charset="utf-8"></script>
     <script src="js/nodegraph.js" charset="utf-8"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 
@@ -157,134 +158,134 @@
             return randomstring;
         }
 
-        var tics = [];
-        var tx_ram = 1;
-        var tx = []
-        for (var z = 1; z < 2; z++) {
-            var tics = [];
-            var tx_ram = z;
-            for (var j = 1; j < 47; j++) {
-                for (var i = 1; i < 8; i++) {
-                    tics.push({
-                        "type": 'tx_detect',
-                        "from": 'node_' + String(j).padStart(4, '0'),
-                        "to": 'node_' + String((((j - 1) * 7) + i + 1)).padStart(4, '0'),
-                        "tx": 'tx' + String(tx_ram).padStart(4, '0')
-                    });
-                }
-            }
-            tx.push(tics);
-            if (z >= 4) {
-                tics.push({
-                    "type": 'tx_detect',
-                    "from": null,
-                    "to": null,
-                    "tx": 'tx' + String(tx_ram - 3).padStart(4, '0')
-                });
-            }
-        }
-        graph.input_step_data(tx);
-
-        // graph.prepare_draw_chart();
-
         // var tics = [];
-        // var tx_map = new Map();
-        // this.tx_ram = 1;
-        // this.i = 1;
-        // this.j = 1;
-        // var count = 0;
-
-
-        // function repeatingFunc() {
-        //     // var maxLength = randomRange(1000, 1500);
-        //     var maxLength = 1000;
-        //     tics = [];
-        //     while (tics.length < maxLength) {
-        //         if (i > 43) {
-        //             i = 1;
-        //             j = 1;
-        //         }
-
-        //         tics.push({
-        //             "type": 'node_to_node',
-        //             "from": 'node_' + String(i).padStart(4, '0'),
-        //             "to": 'node_' + String(((i - 1) * 7) + j + 1).padStart(4, '0'),
-        //             "tx": 'tx' + String(tx_ram).padStart(4, '0')
-        //         });
-
-        //         if (j % 7 == 0) {
-        //             j = 1;
-        //             i++;
-        //         } else {
-        //             j++;
-        //         }
-
-        //         if ((((i - 1) * 7) + j + 1) > 302) {
-        //             // tx_map.set(tx_ram, tx_ram);
-        //             // if (tx_ram % 2 == 0) {
-        //             //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-        //             //     var key = Array.from(tx_map.keys())[random];
-        //             //     tx_map.delete(key);
-        //             //     tics.push({
-        //             //         "type": 'tx_detected_in_block',
-        //             //         "from": null,
-        //             //         "to": null,
-        //             //         "tx": 'tx' + String(key).padStart(4, '0')
-        //             //     });
-        //             // }
-        //             // if (tx_ram % 3 == 0) {
-        //             //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-        //             //     var key = Array.from(tx_map.keys())[random];
-        //             //     tx_map.delete(key);
-        //             //     tics.push({
-        //             //         "type": 'tx_detected_in_block',
-        //             //         "from": null,
-        //             //         "to": null,
-        //             //         "tx": 'tx' + String(key).padStart(4, '0')
-        //             //     });
-        //             // }
-        //             // if (tx_ram % 5 == 0) {
-        //             //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-        //             //     var key = Array.from(tx_map.keys())[random];
-        //             //     tx_map.delete(key);
-        //             //     tics.push({
-        //             //         "type": 'tx_detected_in_block',
-        //             //         "from": null,
-        //             //         "to": null,
-        //             //         "tx": 'tx' + String(key).padStart(4, '0')
-        //             //     });
-        //             // }
-        //             // if (tx_ram % 7 == 0) {
-        //             //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-        //             //     var key = Array.from(tx_map.keys())[random];
-        //             //     tx_map.delete(key);
-        //             //     tics.push({
-        //             //         "type": 'tx_detected_in_block',
-        //             //         "from": null,
-        //             //         "to": null,
-        //             //         "tx": 'tx' + String(key).padStart(4, '0')
-        //             //     });
-        //             // }
-
-        //             if (tx_ram > 2) {
-        //                 // var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
-        //                 // var key = Array.from(tx_map.keys())[random];
-        //                 // tx_map.delete(key);
-        //                 tics.push({
-        //                     "type": 'tx_detected_in_block',
-        //                     "from": null,
-        //                     "to": null,
-        //                     "tx": 'tx' + String(tx_ram - 2).padStart(4, '0')
-        //                 });
-        //             }
-        //             tx_ram++;
+        // var tx_ram = 1;
+        // var tx = []
+        // for (var z = 1; z < 2; z++) {
+        //     var tics = [];
+        //     var tx_ram = z;
+        //     for (var j = 1; j < 47; j++) {
+        //         for (var i = 1; i < 8; i++) {
+        //             tics.push({
+        //                 "type": 'tx_detect',
+        //                 "from": 'node_' + String(j).padStart(4, '0'),
+        //                 "to": 'node_' + String((((j - 1) * 7) + i + 1)).padStart(4, '0'),
+        //                 "tx": 'tx' + String(tx_ram).padStart(4, '0')
+        //             });
         //         }
         //     }
-        //     graph.input_realtime_data(tics);
-        //     setTimeout(repeatingFunc, 1500);
-        //     count++;
+        //     tx.push(tics);
+        //     if (z >= 4) {
+        //         tics.push({
+        //             "type": 'tx_detect',
+        //             "from": null,
+        //             "to": null,
+        //             "tx": 'tx' + String(tx_ram - 3).padStart(4, '0')
+        //         });
+        //     }
         // }
-        // setTimeout(repeatingFunc, 1500);
+        // graph.input_step_data(tx);
+
+        graph.prepare_draw_chart();
+
+        var tics = [];
+        var tx_map = new Map();
+        this.tx_ram = 1;
+        this.i = 1;
+        this.j = 1;
+        var count = 0;
+
+
+        function repeatingFunc() {
+            // var maxLength = randomRange(1000, 1500);
+            var maxLength = 1000;
+            tics = [];
+            while (tics.length < maxLength) {
+                if (i > 43) {
+                    i = 1;
+                    j = 1;
+                }
+
+                tics.push({
+                    "type": 'node_to_node',
+                    "from": 'node_' + String(i).padStart(4, '0'),
+                    "to": 'node_' + String(((i - 1) * 7) + j + 1).padStart(4, '0'),
+                    "tx": 'tx' + String(tx_ram).padStart(4, '0')
+                });
+
+                if (j % 7 == 0) {
+                    j = 1;
+                    i++;
+                } else {
+                    j++;
+                }
+
+                if ((((i - 1) * 7) + j + 1) > 302) {
+                    // tx_map.set(tx_ram, tx_ram);
+                    // if (tx_ram % 2 == 0) {
+                    //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                    //     var key = Array.from(tx_map.keys())[random];
+                    //     tx_map.delete(key);
+                    //     tics.push({
+                    //         "type": 'tx_detected_in_block',
+                    //         "from": null,
+                    //         "to": null,
+                    //         "tx": 'tx' + String(key).padStart(4, '0')
+                    //     });
+                    // }
+                    // if (tx_ram % 3 == 0) {
+                    //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                    //     var key = Array.from(tx_map.keys())[random];
+                    //     tx_map.delete(key);
+                    //     tics.push({
+                    //         "type": 'tx_detected_in_block',
+                    //         "from": null,
+                    //         "to": null,
+                    //         "tx": 'tx' + String(key).padStart(4, '0')
+                    //     });
+                    // }
+                    // if (tx_ram % 5 == 0) {
+                    //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                    //     var key = Array.from(tx_map.keys())[random];
+                    //     tx_map.delete(key);
+                    //     tics.push({
+                    //         "type": 'tx_detected_in_block',
+                    //         "from": null,
+                    //         "to": null,
+                    //         "tx": 'tx' + String(key).padStart(4, '0')
+                    //     });
+                    // }
+                    // if (tx_ram % 7 == 0) {
+                    //     var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                    //     var key = Array.from(tx_map.keys())[random];
+                    //     tx_map.delete(key);
+                    //     tics.push({
+                    //         "type": 'tx_detected_in_block',
+                    //         "from": null,
+                    //         "to": null,
+                    //         "tx": 'tx' + String(key).padStart(4, '0')
+                    //     });
+                    // }
+
+                    if (tx_ram > 2) {
+                        // var random = randomRange(0, Array.from(tx_map.keys()).length - 1) + 1;
+                        // var key = Array.from(tx_map.keys())[random];
+                        // tx_map.delete(key);
+                        tics.push({
+                            "type": 'tx_detected_in_block',
+                            "from": null,
+                            "to": null,
+                            "tx": 'tx' + String(tx_ram - 2).padStart(4, '0')
+                        });
+                    }
+                    tx_ram++;
+                }
+            }
+            graph.input_realtime_data(tics);
+            setTimeout(repeatingFunc, 1500);
+            count++;
+        }
+        setTimeout(repeatingFunc, 1500);
 
         $('#duration').text(graph.duration);
 
@@ -342,6 +343,10 @@
 
         $('#btn_back').on('click', function (e) {
             graph.toPrev();
+        });
+
+        $('#btn_rewind').on('click', function (e) {
+            graph.rewind();
         });
     </script>
 </body>

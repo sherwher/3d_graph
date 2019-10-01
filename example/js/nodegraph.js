@@ -669,6 +669,8 @@ function nodeGraph() {
             v.txs = new Map();
             v.source = false;
             v.target = false;
+            v.source_count = 0;
+            v.target_count = 0;
         });
         store_data.txs = new Map();
         chart_update(store_data);
@@ -695,7 +697,9 @@ function nodeGraph() {
     function pushNodeData(node) {
         if (findNode(store_data, node.name) == null) {
             node.source = false;
+            node.source_count = 0;
             node.target = false;
+            node.target_count = 0;
             //노드 생성 위치
             node.x = createNodeX;
             node.y = createNodeY;
@@ -710,11 +714,23 @@ function nodeGraph() {
         for (var j = 0; j < store_data.nodes.length; j++) {
             if (link.source == store_data.nodes[j].name) {
                 store_data.nodes[j].source = true;
-                store_data.nodes[j].txs.set(link.tx, link.tx);
+                store_data.nodes[j].source_count++;
+                if (store_data.nodes[j].txs.has(link.tx)) {
+                    var count = store_data.nodes[j].txs.get(link.tx);
+                    store_data.nodes[j].txs.set(link.tx, count + 1);
+                } else {
+                    store_data.nodes[j].txs.set(link.tx, 1);
+                }
             }
             if (link.target == store_data.nodes[j].name) {
                 store_data.nodes[j].target = true;
-                store_data.nodes[j].txs.set(link.tx, link.tx);
+                store_data.nodes[j].target_count++;
+                if (store_data.nodes[j].txs.has(link.tx)) {
+                    var count = store_data.nodes[j].txs.get(link.tx);
+                    store_data.nodes[j].txs.set(link.tx, count + 1);
+                } else {
+                    store_data.nodes[j].txs.set(link.tx, 1);
+                }
             }
 
         }
@@ -726,6 +742,55 @@ function nodeGraph() {
         display.from.value = link.source;
         display.tx.value = link.tx;
         store_data.links.push(link);
+    }
+
+    function removeLinkData(link) {
+        // 선택된 Node의 Count정리
+        var target_node = findNode(store_data, link.to);
+        var source_node = findNode(store_data, link.from);
+
+        var target_count = target_node.txs.get(link.tx);
+        target_node.txs.set(link.tx, target_count - 1);
+
+        var source_count = source_node.txs.get(link.tx);
+        source_node.txs.set(link.tx, source_count - 1);
+        var is_empty_tx = true;
+        for (var j = 0; j < store_data.nodes.length; j++) {
+            if (store_data.nodes[j].txs.get(link.tx) == 0) {
+                store_data.nodes[j].txs.delete(link.tx);
+            }
+            if (store_data.nodes[j].txs.has(link.tx)) {
+                is_empty_tx = false;
+            }
+            if (link.from == store_data.nodes[j].name) {
+                store_data.nodes[j].source_count--;
+                if (store_data.nodes[j].source_count == 0) {
+                    store_data.nodes[j].source = false;
+                }
+            }
+            if (link.to == store_data.nodes[j].name) {
+                store_data.nodes[j].target_count--;
+                if (store_data.nodes[j].target_count == 0) {
+                    store_data.nodes[j].target = false;
+                }
+            }
+        }
+        if (is_empty_tx) store_data.txs.delete(link.tx);
+        // Link가 연결될때 기존의 라인을 초기화
+        if (!target_node.target) {
+
+            d3.select("#" + link.from + "-" + link.to).style("stroke", "#fff").style("stroke-width", 3);
+        }
+        current_link = link;
+        display.to.value = link.to;
+        display.from.value = link.from;
+        display.tx.value = link.tx;
+        var copy_links = $.extend([], store_data.links);
+        store_data.links = copy_links;
+        chart_update(store_data);
+        table_update(table_data);
+        customUpdate();
+        keepNodesOnTop();
     }
 
     // 단일 노드와 링크를 처리(step) - 테이블 데이터 셋팅후 노드 추가
@@ -740,7 +805,6 @@ function nodeGraph() {
             customUpdate();
             keepNodesOnTop();
         }
-
     }
 
     // 다중 노드와 링크를 처리하기전 모든 링크를 삭제(실시간)
@@ -788,12 +852,29 @@ function nodeGraph() {
             var job = step_queue.dequeue();
             if (job != null) {
                 addNodeAndLink(job, true);
+                rewind_stack.push(job);
             } else {
                 clearInterval(timer);
             }
         }, duration)
         return timer;
     }
+
+    function work_job_rewind(duration) {
+        var timer = setInterval(() => {
+            var job = rewind_stack.pop();
+            step_queue.enqueue_first(job);
+            if (job != null) {
+                removeLinkData(job);
+            } else {
+                clearInterval(timer);
+                step_queue = new Queue();
+            }
+        }, duration);
+        return timer;
+    }
+
+    var rewind_stack = new Stack();
 
     this.input_step_data = function (data, duration, interval, spec) {
         this.duration = duration ? duration : 50;
@@ -805,6 +886,7 @@ function nodeGraph() {
         lineDuration = 0;
         nodeDuration = 0;
         step_queue = new Queue();
+        rewind_stack = new Stack();
         removeAllLinkAndTX();
         clearInterval(this.timer);
         var i = 0;
@@ -822,6 +904,7 @@ function nodeGraph() {
                     step_queue.enqueue(tx);
                 } else {
                     addNodeAndLink(tx, false);
+                    rewind_stack.push(tx);
                 }
             } else {
                 step_queue.enqueue(tx);
@@ -940,6 +1023,13 @@ function nodeGraph() {
 
         step_type = null;
     }
+
+    this.rewind = function () {
+        if (isStep) {
+            clearInterval(this.timer);
+            this.timer = work_job_rewind(this.duration);
+        }
+    };
 
     this.toPrev = function () {
         if (isStep && step_type) {
