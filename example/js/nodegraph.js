@@ -831,12 +831,6 @@ function nodeGraph() {
                 store_data.nodes.forEach((v) => {
                     v.txs.delete(tick.tx);
                 });
-                tick.id = tick.tx + "_" + tick.index;
-                if (table_data.has(tick.tx)) {
-                    table_data.get(tick.tx).push(tick);
-                } else {
-                    table_data.set(tick.tx, [tick]);
-                }
             } else {
                 pushNodeData({ "name": tick.to });
                 pushNodeData({ "name": tick.from });
@@ -1071,7 +1065,7 @@ function nodeGraph() {
         if (isStep) {
             clearInterval(this.timer);
             this.duration = this.duration + this.interval > 60000 ? 60000 : this.duration + this.interval;
-            this.timer = work_job_onetick(this.duration);
+            // this.timer = work_job_onetick(this.duration);
         }
     }
 
@@ -1079,7 +1073,7 @@ function nodeGraph() {
         if (isStep) {
             clearInterval(this.timer);
             this.duration = this.duration - this.interval > 0 ? this.duration - this.interval : this.interval;
-            this.timer = work_job_onetick(this.duration);
+            // this.timer = work_job_onetick(this.duration);
         }
     }
 
