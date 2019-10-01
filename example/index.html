@@ -120,7 +120,6 @@
     <div style="width: 100%; position: absolute; bottom: 0px; align-items: center; display: flex;">
         <button id="btn_start">시작</button>
         <button id="btn_stop">정지</button>
-        <button id="btn_init">초기화</button>
         <button id="btn_slow">느리게</button>
         <button id="btn_fast">빠르게</button>
         <button id="btn_step">다음</button>
@@ -290,10 +289,6 @@
 
         $('#duration').text(graph.duration);
 
-        // 그리기 초기화
-        $('#btn_init').on('click', function (e) {
-            graph.input_step_data(tx);
-        });
 
         // 그리기 빠르게 +1초(Max 60초)
         $('#btn_fast').on('click', function (e) {
