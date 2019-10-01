@@ -14,8 +14,10 @@ function nodeGraph() {
     var txs = [];
     // 차트그리기의 시작과 정지를 담당
     var queue = new Queue();
-
+    // 단계별 진행
     var step_queue = new Queue();
+    // 되돌리기를 구현하기 위한 스택
+    var rewind_stack = new Stack();
 
     // 큐에서 데이터를 꺼내는 시간
     this.duration = 25;
@@ -54,7 +56,6 @@ function nodeGraph() {
 
     var table_data = new Map()
     var table_data_flat = [];
-    var deleted_txs = new Map()
 
     var display = {
         allNode: {
@@ -93,6 +94,12 @@ function nodeGraph() {
             prefix: '최신TX : '
         }
     }
+    // var coordinate = [];
+    // var coordinate_map = new Map();
+
+    // d3.json("file/coordinate.json", function (err, data) {
+    //     coordinate = data;
+    // });
 
     // 현재 그래프에 맞게 custom하게 처리한 부분
     function customUpdate() {
@@ -353,7 +360,7 @@ function nodeGraph() {
     var node, link;
 
     force.on('tick', function () {
-        node.attr('transform', function (d) { return 'translate(' + d.x + ',' + d.y + ')'; })
+        node.attr('transform', function (d) { return 'translate(' + d.x + ',' + d.y + ')'; });
 
         link.attr('x1', function (d) { return d.source.x; })
             .attr('y1', function (d) { return d.source.y; })
@@ -627,6 +634,13 @@ function nodeGraph() {
                 .nodes(data.nodes)
                 .links([])
                 .start();
+
+            if (isStep) {
+                force
+                    .nodes([])
+                    .links([])
+                    .start();
+            }
         }
 
     }
@@ -655,14 +669,7 @@ function nodeGraph() {
         return null;
     }
 
-    // 모든 노드를 삭제한다.
-    function removeAllNode() {
-        store_data.links = [];
-        store_data.nodes = [];
-        chart_update(store_data);
-        keepNodesOnTop();
-    }
-
+    // 모든 링크와 각 TX리스트를 삭제
     function removeAllLinkAndTX() {
         store_data.links = [];
         store_data.nodes.forEach((v) => {
@@ -779,7 +786,7 @@ function nodeGraph() {
         // Link가 연결될때 기존의 라인을 초기화
         if (!target_node.target) {
 
-            d3.select("#" + link.from + "-" + link.to).style("stroke", "#fff").style("stroke-width", 3);
+            d3.select("#" + link.from + "-" + link.to).style("stroke", "#fff").style("stroke-width", 0);
         }
         current_link = link;
         display.to.value = link.to;
@@ -824,6 +831,12 @@ function nodeGraph() {
                 store_data.nodes.forEach((v) => {
                     v.txs.delete(tick.tx);
                 });
+                tick.id = tick.tx + "_" + tick.index;
+                if (table_data.has(tick.tx)) {
+                    table_data.get(tick.tx).push(tick);
+                } else {
+                    table_data.set(tick.tx, [tick]);
+                }
             } else {
                 pushNodeData({ "name": tick.to });
                 pushNodeData({ "name": tick.from });
@@ -860,6 +873,7 @@ function nodeGraph() {
         return timer;
     }
 
+    // job단위로 되로 돌림
     function work_job_rewind(duration) {
         var timer = setInterval(() => {
             var job = rewind_stack.pop();
@@ -874,8 +888,8 @@ function nodeGraph() {
         return timer;
     }
 
-    var rewind_stack = new Stack();
 
+    // 스텝별로 차트를 그림
     this.input_step_data = function (data, duration, interval, spec) {
         this.duration = duration ? duration : 50;
         this.interval = interval ? interval : 50;
@@ -1021,7 +1035,7 @@ function nodeGraph() {
             value.asc = false;
             d3.select('#header_' + v).text(value.text);
         });
-
+        tbody.selectAll("tr").remove();
         step_type = null;
     }
 
@@ -1058,8 +1072,6 @@ function nodeGraph() {
             clearInterval(this.timer);
             this.duration = this.duration + this.interval > 60000 ? 60000 : this.duration + this.interval;
             this.timer = work_job_onetick(this.duration);
-        } else {
-
         }
     }
 
@@ -1068,8 +1080,6 @@ function nodeGraph() {
             clearInterval(this.timer);
             this.duration = this.duration - this.interval > 0 ? this.duration - this.interval : this.interval;
             this.timer = work_job_onetick(this.duration);
-        } else {
-
         }
     }
 
@@ -1082,7 +1092,7 @@ function nodeGraph() {
     this.start = function () {
         if (isStep) {
             if (step_queue.isEmpty()) {
-                this.input_step_data(txs);
+                this.input_step_data(txs, this.duration, this.interval);
             } else {
                 clearInterval(this.timer);
                 this.timer = work_job_onetick(this.duration);
@@ -1112,11 +1122,6 @@ function nodeGraph() {
                     addNodeAndLink(job, true);
                 }
             }
-        } else {
-            var job = queue.dequeue();
-            if (job != null) {
-                this.timer = cycles_per_tick(job);
-            }
         }
     }
 
@@ -1131,6 +1136,13 @@ function nodeGraph() {
 
     this.startScroll = () => {
         isScroll = true;
+    }
+
+    this.getXY = () => {
+    }
+
+    function randomRange(n1, n2) {
+        return Math.floor((Math.random() * (n2 - n1 + 1)) + n1);
     }
 }
 

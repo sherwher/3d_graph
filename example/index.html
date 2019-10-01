@@ -128,6 +128,7 @@
         <button id="btn_disableLink">링크사용안함</button>
         <button id="btn_scrollstop">스크롤정지</button>
         <button id="btn_scrollstart">스크롤시작</button>
+        <button id="btn_get">좌표가져오기</button>
         <button style="right: 20px; position: absolute;" id="btn_back">이전</button>
         <button style="right: 80px; position: absolute;" id="btn_rewind">뒤감기</button>
         <span id="duration"></span>
@@ -164,7 +165,7 @@
         // for (var z = 1; z < 2; z++) {
         //     var tics = [];
         //     var tx_ram = z;
-        //     for (var j = 1; j < 47; j++) {
+        //     for (var j = 1; j < 65; j++) {
         //         for (var i = 1; i < 8; i++) {
         //             tics.push({
         //                 "type": 'tx_detect',
@@ -348,6 +349,10 @@
         $('#btn_rewind').on('click', function (e) {
             graph.rewind();
         });
+
+        $('#btn_get').on('click', function (e) {
+            graph.getXY()
+        })
     </script>
 </body>
 
