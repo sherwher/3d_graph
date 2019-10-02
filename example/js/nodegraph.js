@@ -35,7 +35,6 @@ function nodeGraph() {
 
     var isScroll = true;
     var current_link = null;
-    var scroll_timer = null;
 
     var step_type = "";
 
