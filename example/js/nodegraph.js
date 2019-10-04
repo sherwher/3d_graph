@@ -1,13 +1,76 @@
 var graph = {}
 
+function Queue() {
 
+    var queue = [];
+    var offset = 0;
+
+    this.getLength = function () {
+        return (queue.length - offset);
+    }
+
+    this.isEmpty = function () {
+        return (queue.length == 0);
+    }
+
+    this.enqueue = function (item) {
+        queue.push(item);
+    }
+
+    this.enqueue_first = function (item) {
+        queue.unshift(item);
+    }
+
+    this.dequeue = function () {
+
+        if (queue.length == 0) return undefined;
+
+        var item = queue[offset];
+
+        if (++offset * 2 >= queue.length) {
+            queue = queue.slice(offset);
+            offset = 0;
+        }
+
+        return item;
+
+    }
+
+    this.peek = function () {
+        return (queue.length > 0 ? queue[offset] : undefined);
+    }
+
+}
+
+function Stack() {
+
+    var stack = [];
+
+    this.getLength = function () {
+        return stack.length;
+    }
+
+    this.isEmpty = function () {
+        return (stack.length == 0);
+    }
+
+    this.push = function (item) {
+        stack.unshift(item);
+    }
+
+    this.pop = function () {
+        if (stack.length == 0) return undefined;
+
+        var item = stack.shift();
+
+        return item;
+    }
+
+}
 
 function nodeGraph() {
-
-
     // timer
-    this.timer = null;
-
+    main_timer = null;
     // 특정 단위로 진행할 것인가?
     var isStep = false;
     // 특정 단위로 진행시 데이터
@@ -20,41 +83,53 @@ function nodeGraph() {
     var rewind_stack = new Stack();
 
     // 큐에서 데이터를 꺼내는 시간
-    this.duration = 25;
+    var duration = 25;
     // 빠르기를 조절할 interval
-    this.interval = 25;
+    var interval = 25;
     // line을 그리는 애니메이션 시간 보통 큐에서 데이터를 꺼내는 시간의 4배
-    var lineDuration = this.duration * 4;
+    var lineDuration = duration * 4;
     // Node를 그리는 애니메이션 시간 보통 큐에서 데이터를 꺼내는 시간의 2배
-    var nodeDuration = this.duration * 2;
+    var nodeDuration = duration * 2;
     // 노드가 처음 생성되는 좌표
     var createNodeX = 200;
     var createNodeY = 200;
     // 링크를 사용 할 것인가?
     var ableLink = false;
-
+    // 스크롤을 사용할 것인가?
     var isScroll = true;
+    // 테이블에 현재 상태를 보여주기 위한 변수
     var current_link = null;
-
+    // 실시간 -> Step시 클릭타입
     var step_type = "";
-
+    // 차트 실행이후 전체데이터
     var all_data = new Map();
-
-    var store_data = {
+    // 차트를 그리기 위한 데이터
+    var chart_data = {
         nodes: [],
         links: [],
         txs: new Map()
     }
-
+    // step으로 넘어갔다가 다시 돌아올때를 대비하기 위한 백업데이터
     var backup_data = {
         nodes: [],
         links: [],
         txs: new Map()
     }
-    var backup_table = new Map()
-
-    var table_data = new Map()
+    // 테이블을 그리기 위한 데이터    
+    var table_data = new Map();
+    // step으로 넘어갔다가 다시 돌아올때를 대비하기 위한 백업데이터
+    var backup_table = new Map();
+    // table_data의 전체 데이터를 한 배열로 두기위한 배열
     var table_data_flat = [];
+
+    var table_headers = new Map([
+        ['type', { text: "type", asc: false, desc: false }],
+        ['txid', { text: "txid", asc: false, desc: false }],
+        ['from', { text: "from", asc: false, desc: false }],
+        ['to', { text: "to", asc: false, desc: false }]
+    ]);
+
+    var sorting = new Map();
 
     var display = {
         allNode: {
@@ -93,73 +168,11 @@ function nodeGraph() {
             prefix: '최신TX : '
         }
     }
-    // var coordinate = [];
-    // var coordinate_map = new Map();
 
-    // d3.json("file/coordinate.json", function (err, data) {
-    //     coordinate = data;
-    // });
+    var width = d3.select('#node_graph')[0][0].clientWidth - 10,
+        height = d3.select('#node_graph')[0][0].clientHeight - 2;
 
-    // 현재 그래프에 맞게 custom하게 처리한 부분
-    function customUpdate() {
-
-        let x = d3.scale.linear().range([-20, 20]),
-            y = d3.scale.linear().range([-22, -17]);
-
-        x.domain([0, Array.from(store_data.txs.keys()).length]);
-        y.domain([0, 1]);
-        /**
-        node가 highlight되는 부분 처리
-        */
-        for (var i in store_data.nodes) {
-
-            var n = store_data.nodes[i];
-            // 하일라이트처리
-            d3.select("#round" + n.id)
-                .transition()
-                .duration(nodeDuration)
-                .attr("fill", circleColor(n))
-                .attr('r', circleSize(n))
-
-            // tx박스 전체 삭제    
-            svg.select("#g" + n.id).selectAll('.path-fill').remove();
-
-            // tx박스 설정(area그래프 path로 처리)
-            d3.select('#g' + n.id)
-                .append("path")
-                .attr("class", "path-fill")
-                .attr("d", function (d) {
-                    var xmap = Array.from(store_data.txs.keys()).sort();
-                    let fill = `M-20,-22`;
-                    for (var i = 0; i < xmap.length; i++) {
-                        let y0, x0;
-                        if (d.txs.has(xmap[i])) {
-                            y0 = y(1);
-                            x0 = x(i + 1);
-                        } else {
-                            y0 = y(0);
-                            x0 = x(i + 1);
-                        }
-                        fill += `V${y0}H${x0}`;
-                    }
-                    fill += `V-22Z`;
-                    return fill;
-                });
-
-        }
-
-        display.allNode.value = store_data.nodes.length;
-        display.txlength.value = Array.from(store_data.txs.keys()).length;
-
-        for (var key in display) {
-            svg.select('#' + display[key].id).text(display[key].prefix + display[key].value)
-        }
-    }
-
-    var width = d3.select('#graph')[0][0].clientWidth - 10,
-        height = d3.select('#graph')[0][0].clientHeight - 2;
-
-    var svg = d3.select('#graph')
+    var svg = d3.select('#node_graph')
         .append('svg')
         .attr('width', width)
         .attr('height', height)
@@ -172,21 +185,13 @@ function nodeGraph() {
         .size([width, height])
         .charge(-300)
 
-    var twidth = d3.select('#table')[0][0].clientWidth,
-        theight = d3.select('#graph')[0][0].clientHeight + 4
+    var twidth = d3.select('#node_table')[0][0].clientWidth,
+        theight = d3.select('#node_graph')[0][0].clientHeight + 4
 
     // table 생성
-    var table = d3.select('#table')
+    var table = d3.select('#node_table')
         .append('table')
         .attr('width', twidth)
-
-    var headers = new Map([
-        ['type', { text: "type", asc: false, desc: false }],
-        ['txid', { text: "txid", asc: false, desc: false }],
-        ['from', { text: "from", asc: false, desc: false }],
-        ['to', { text: "to", asc: false, desc: false }]
-    ]);
-    var sorting = new Map();
 
     table.append('tr')
         .append('td')
@@ -195,19 +200,19 @@ function nodeGraph() {
         .attr('width', twidth - 25)
         .append('tr')
         .selectAll('th')
-        .data(Array.from(headers.keys()))
+        .data(Array.from(table_headers.keys()))
         .enter()
         .append('th')
         .attr('id', function (d) {
-            return "header_" + headers.get(d).text;
+            return "header_" + table_headers.get(d).text;
         })
         .text(function (d) {
-            var value = headers.get(d);
+            var value = table_headers.get(d);
             return value.text;
         })
         .on('click', function (d) {
             if (isStep && d != 'type') {
-                var value = headers.get(d);
+                var value = table_headers.get(d);
                 var postfix = "";
                 if (!(value.desc && value.asc)) {
                     if (value.desc && !value.asc) {
@@ -238,25 +243,6 @@ function nodeGraph() {
 
 
     var tbody = inner.append("tbody").attr('id', 'tbody');
-
-    function circleSize(d) {
-        if (d.source || d.target) {
-            return 15;
-        }
-        return 10;
-    }
-
-    function circleColor(d) {
-        if (d.source && d.target) {
-            return "#00ffff";
-        } else if (d.source && !d.target) {
-            return "#00ff00"
-        } else if (!d.source && d.target) {
-            return "#0000ff"
-        } else {
-            return "#ff0000";
-        }
-    }
 
     var tooltipWidth = 250;
     var tooltipHeight = 170;
@@ -367,6 +353,7 @@ function nodeGraph() {
             .attr('y2', function (d) { return d.target.y; });
     });
 
+    // scroll의 위치를 계산
     function scrollTopTween(scrollTop) {
         return function () {
             var i = d3.interpolateNumber(this.scrollTop, scrollTop);
@@ -376,11 +363,88 @@ function nodeGraph() {
         };
     }
 
+    // Node background size
+    function circleSize(node) {
+        if (node.source || node.target) {
+            return 15;
+        }
+        return 10;
+    }
+
+    // Node background color
+    function circleColor(node) {
+        if (node.source && node.target) {
+            return "#00ffff";
+        } else if (node.source && !node.target) {
+            return "#00ff00"
+        } else if (!node.source && node.target) {
+            return "#0000ff"
+        } else {
+            return "#ff0000";
+        }
+    }
+
+    // 현재 그래프에 맞게 custom하게 처리한 부분
+    function custom_update() {
+
+        let x = d3.scale.linear().range([-20, 20]),
+            y = d3.scale.linear().range([-22, -17]);
+
+        x.domain([0, Array.from(chart_data.txs.keys()).length]);
+        y.domain([0, 1]);
+        /**
+        node가 highlight되는 부분 처리
+        */
+        for (var i in chart_data.nodes) {
+
+            var n = chart_data.nodes[i];
+            // 하일라이트처리
+            d3.select("#round" + n.id)
+                .transition()
+                .duration(nodeDuration)
+                .attr("fill", circleColor(n))
+                .attr('r', circleSize(n))
+
+            // tx박스 전체 삭제    
+            svg.select("#g" + n.id).selectAll('.path-fill').remove();
+
+            // tx박스 설정(area그래프 path로 처리)
+            d3.select('#g' + n.id)
+                .append("path")
+                .attr("class", "path-fill")
+                .attr("d", function (d) {
+                    var xmap = Array.from(chart_data.txs.keys()).sort();
+                    let fill = `M-20,-22`;
+                    for (var i = 0; i < xmap.length; i++) {
+                        let y0, x0;
+                        if (d.txs.has(xmap[i])) {
+                            y0 = y(1);
+                            x0 = x(i + 1);
+                        } else {
+                            y0 = y(0);
+                            x0 = x(i + 1);
+                        }
+                        fill += `V${y0}H${x0}`;
+                    }
+                    fill += `V-22Z`;
+                    return fill;
+                });
+
+        }
+
+        display.allNode.value = chart_data.nodes.length;
+        display.txlength.value = Array.from(chart_data.txs.keys()).length;
+
+        for (var key in display) {
+            svg.select('#' + display[key].id).text(display[key].prefix + display[key].value)
+        }
+    }
+
     // 데이터 리스트를 sorting처리
     function sorting_data(a, b) {
         var sort = null;
         Array.from(sorting.keys()).forEach((v) => {
-            var value = headers.get(v);
+            var value = table_headers.get(v);
             if (!value.asc || !value.desc) {
                 if (!value.asc && value.desc) {
                     switch (v) {
@@ -423,7 +487,7 @@ function nodeGraph() {
             tbody.selectAll("tr").remove();
         } else {
             Array.from(table_data.keys()).forEach((v) => {
-                if (!store_data.txs.has(v)) {
+                if (!chart_data.txs.has(v)) {
                     table_data.delete(v);
                     d3.selectAll('.' + v).remove();
                 }
@@ -460,7 +524,7 @@ function nodeGraph() {
                     return d.tx + "_" + d.index;
                 })
                 .on("click", function (d) {
-                    click_column(step_type, d);
+                    click_table(step_type, d);
                 });
 
             rowsEnter.append("td").text(function (d) {
@@ -490,17 +554,17 @@ function nodeGraph() {
             rowsEnter.append("td").text(function (d) {
                 return d.tx
             }).on("click", function (d) {
-                click_column('tx', d);
+                click_table('tx', d);
             });
             rowsEnter.append("td").text(function (d) {
                 return d.from
             }).on("click", function (d) {
-                click_column('from', d);
+                click_table('from', d);
             });
             rowsEnter.append("td").text(function (d) {
                 return d.to
             }).on("click", function (d) {
-                click_column('to', d);
+                click_table('to', d);
             });
         }
 
@@ -518,6 +582,7 @@ function nodeGraph() {
         }
     }
 
+    // 변경점이 생겼을경우 차트를 업데이트함.
     function chart_update(data) {
         data.nodes.forEach(function (d, i) {
             d.id = d.name;
@@ -643,7 +708,8 @@ function nodeGraph() {
         }
 
     }
-    chart_update(store_data);
+
+    chart_update(chart_data);
     table_update(table_data);
 
     function keepNodesOnTop() {
@@ -670,38 +736,23 @@ function nodeGraph() {
 
     // 모든 링크와 각 TX리스트를 삭제
     function removeAllLinkAndTX() {
-        store_data.links = [];
-        store_data.nodes.forEach((v) => {
+        chart_data.links = [];
+        chart_data.nodes.forEach((v) => {
             v.txs = new Map();
             v.source = false;
             v.target = false;
             v.source_count = 0;
             v.target_count = 0;
         });
-        store_data.txs = new Map();
-        chart_update(store_data);
-        customUpdate();
-        keepNodesOnTop();
-    }
-
-    // 모든 링크를 삭제한다.
-    function removeAllLink() {
-        datas.forEach((tick) => {
-            if (tick.to == null || tick.from == null) {
-                store_data.txs.delete(tick.tx);
-            } else {
-                pushNodeData({ "name": tick.to });
-                pushNodeData({ "name": tick.from });
-                pushLinkData({ "source": tick.from, "target": tick.to, "tx": tick.tx, "index": tick.index }, true);
-            }
-        });
-        chart_update(store_data);
+        chart_data.txs = new Map();
+        chart_update(chart_data);
+        custom_update();
         keepNodesOnTop();
     }
 
     // 노드를 처리(데이터로만 저장 -> 렌더링은 한번에 진행)
     function pushNodeData(node) {
-        if (findNode(store_data, node.name) == null) {
+        if (findNode(chart_data, node.name) == null) {
             node.source = false;
             node.source_count = 0;
             node.target = false;
@@ -710,32 +761,32 @@ function nodeGraph() {
             node.x = createNodeX;
             node.y = createNodeY;
             node.txs = new Map();
-            store_data.nodes.push(node);
+            chart_data.nodes.push(node);
         }
     }
 
     // 링크를 처리(데이터로만 저장 -> 렌더링은 한번에 진행)
     function pushLinkData(link, init_line) {
-        store_data.txs.set(link.tx, link.tx);
-        for (var j = 0; j < store_data.nodes.length; j++) {
-            if (link.source == store_data.nodes[j].name) {
-                store_data.nodes[j].source = true;
-                store_data.nodes[j].source_count++;
-                if (store_data.nodes[j].txs.has(link.tx)) {
-                    var count = store_data.nodes[j].txs.get(link.tx);
-                    store_data.nodes[j].txs.set(link.tx, count + 1);
+        chart_data.txs.set(link.tx, link.tx);
+        for (var j = 0; j < chart_data.nodes.length; j++) {
+            if (link.source == chart_data.nodes[j].name) {
+                chart_data.nodes[j].source = true;
+                chart_data.nodes[j].source_count++;
+                if (chart_data.nodes[j].txs.has(link.tx)) {
+                    var count = chart_data.nodes[j].txs.get(link.tx);
+                    chart_data.nodes[j].txs.set(link.tx, count + 1);
                 } else {
-                    store_data.nodes[j].txs.set(link.tx, 1);
+                    chart_data.nodes[j].txs.set(link.tx, 1);
                 }
             }
-            if (link.target == store_data.nodes[j].name) {
-                store_data.nodes[j].target = true;
-                store_data.nodes[j].target_count++;
-                if (store_data.nodes[j].txs.has(link.tx)) {
-                    var count = store_data.nodes[j].txs.get(link.tx);
-                    store_data.nodes[j].txs.set(link.tx, count + 1);
+            if (link.target == chart_data.nodes[j].name) {
+                chart_data.nodes[j].target = true;
+                chart_data.nodes[j].target_count++;
+                if (chart_data.nodes[j].txs.has(link.tx)) {
+                    var count = chart_data.nodes[j].txs.get(link.tx);
+                    chart_data.nodes[j].txs.set(link.tx, count + 1);
                 } else {
-                    store_data.nodes[j].txs.set(link.tx, 1);
+                    chart_data.nodes[j].txs.set(link.tx, 1);
                 }
             }
 
@@ -747,13 +798,14 @@ function nodeGraph() {
         display.to.value = link.target;
         display.from.value = link.source;
         display.tx.value = link.tx;
-        store_data.links.push(link);
+        chart_data.links.push(link);
     }
 
-    function removeLinkData(link) {
+    // rewind처리
+    function removeLink(link) {
         // 선택된 Node의 Count정리
-        var target_node = findNode(store_data, link.to);
-        var source_node = findNode(store_data, link.from);
+        var target_node = findNode(chart_data, link.to);
+        var source_node = findNode(chart_data, link.from);
 
         var target_count = target_node.txs.get(link.tx);
         target_node.txs.set(link.tx, target_count - 1);
@@ -761,27 +813,27 @@ function nodeGraph() {
         var source_count = source_node.txs.get(link.tx);
         source_node.txs.set(link.tx, source_count - 1);
         var is_empty_tx = true;
-        for (var j = 0; j < store_data.nodes.length; j++) {
-            if (store_data.nodes[j].txs.get(link.tx) == 0) {
-                store_data.nodes[j].txs.delete(link.tx);
+        for (var j = 0; j < chart_data.nodes.length; j++) {
+            if (chart_data.nodes[j].txs.get(link.tx) == 0) {
+                chart_data.nodes[j].txs.delete(link.tx);
             }
-            if (store_data.nodes[j].txs.has(link.tx)) {
+            if (chart_data.nodes[j].txs.has(link.tx)) {
                 is_empty_tx = false;
             }
-            if (link.from == store_data.nodes[j].name) {
-                store_data.nodes[j].source_count--;
-                if (store_data.nodes[j].source_count == 0) {
-                    store_data.nodes[j].source = false;
+            if (link.from == chart_data.nodes[j].name) {
+                chart_data.nodes[j].source_count--;
+                if (chart_data.nodes[j].source_count == 0) {
+                    chart_data.nodes[j].source = false;
                 }
             }
-            if (link.to == store_data.nodes[j].name) {
-                store_data.nodes[j].target_count--;
-                if (store_data.nodes[j].target_count == 0) {
-                    store_data.nodes[j].target = false;
+            if (link.to == chart_data.nodes[j].name) {
+                chart_data.nodes[j].target_count--;
+                if (chart_data.nodes[j].target_count == 0) {
+                    chart_data.nodes[j].target = false;
                 }
             }
         }
-        if (is_empty_tx) store_data.txs.delete(link.tx);
+        if (is_empty_tx) chart_data.txs.delete(link.tx);
         // Link가 연결될때 기존의 라인을 초기화
         if (!target_node.target) {
 
@@ -791,11 +843,11 @@ function nodeGraph() {
         display.to.value = link.to;
         display.from.value = link.from;
         display.tx.value = link.tx;
-        var copy_links = $.extend([], store_data.links);
-        store_data.links = copy_links;
-        chart_update(store_data);
+        var copy_links = $.extend([], chart_data.links);
+        chart_data.links = copy_links;
+        chart_update(chart_data);
         table_update(table_data);
-        customUpdate();
+        custom_update();
         keepNodesOnTop();
     }
 
@@ -807,27 +859,27 @@ function nodeGraph() {
         if (update) {
             current_link = tick;
             table_update(table_data);
-            chart_update(store_data);
-            customUpdate();
+            chart_update(chart_data);
+            custom_update();
             keepNodesOnTop();
         }
     }
 
     // 다중 노드와 링크를 처리하기전 모든 링크를 삭제(실시간)
     function multiAddNodeAndLinkRemove(datas, update) {
-        for (var j = 0; j < store_data.nodes.length; j++) {
-            store_data.nodes[j].source = false;
-            store_data.nodes[j].target = false;
+        for (var j = 0; j < chart_data.nodes.length; j++) {
+            chart_data.nodes[j].source = false;
+            chart_data.nodes[j].target = false;
         }
         display.to.value = '';
         display.from.value = '';
         display.tx.value = 0;
-        store_data.links = [];
+        chart_data.links = [];
 
         datas.forEach((tick, i) => {
             if (tick.to == null || tick.from == null) {
-                store_data.txs.delete(tick.tx);
-                store_data.nodes.forEach((v) => {
+                chart_data.txs.delete(tick.tx);
+                chart_data.nodes.forEach((v) => {
                     v.txs.delete(tick.tx);
                 });
             } else {
@@ -843,14 +895,67 @@ function nodeGraph() {
             }
         });
         if (update) {
-            chart_update(store_data);
+            chart_update(chart_data);
             table_update(table_data);
-            customUpdate();
+            custom_update();
             keepNodesOnTop();
         }
     }
 
+    // coulmn 클릭시
+    function click_table(type, data) {
+        if (isStep) {
+            step_queue = new Queue();
+            if (type === 'tx') {
+                var txData = table_data.get(data.tx);
+                graph.input_step_data(txData, 50, 50, data);
+            } else if (type === 'from') {
+                var nodeData = Array.from(table_data.values()).flat();
+                graph.input_step_data(nodeData, 50, 50, data);
+            } else if (type === 'to') {
+                var nodeData = Array.from(table_data.values()).flat();
+                graph.input_step_data(nodeData, 50, 50, data);
+            } else {
+                var txData = table_data.get(data.tx);
+                graph.input_step_data(txData, 50, 50, data);
+            }
+        } else {
+            backup_data = $.extend({}, chart_data);
+            backup_table = new Map(table_data);
+            step_queue = new Queue();
+            step_type = type;
+            if (type === 'tx') {
+                var txData = table_data.get(data.tx);
+                graph.input_step_data(txData, 50, 50);
+            } else if (type === 'from') {
+                var nodeData = []
+                Array.from(all_data.values()).flat().map((v) => {
+                    if (data.from === v.from) nodeData.push(v);
+                });
+                graph.input_step_data(nodeData, 50, 50);
+            } else if (type === 'to') {
+                var nodeData = []
+                Array.from(all_data.values()).flat().map((v) => {
+                    if (data.to === v.to) nodeData.push(v);
+                });
+                graph.input_step_data(nodeData, 50, 50);
+            }
+        }
 
+    }
+
+    // 스텝 그래프에서 리얼 타임 그래프로 넘어갈때 처리
+    function init_real_time() {
+        // 테이블 헤더 원위치
+        Array.from(table_headers.keys()).forEach((v) => {
+            var value = table_headers.get(v);
+            value.desc = false;
+            value.asc = false;
+            d3.select('#header_' + v).text(value.text);
+        });
+        tbody.selectAll("tr").remove();
+        step_type = null;
+    }
 
     // tx단위로 작업. timer를 리턴함
     function work_job_onetick(duration) {
@@ -872,7 +977,7 @@ function nodeGraph() {
             var job = rewind_stack.pop();
             step_queue.enqueue_first(job);
             if (job != null) {
-                removeLinkData(job);
+                removeLink(job);
             } else {
                 clearInterval(timer);
                 step_queue = new Queue();
@@ -884,8 +989,8 @@ function nodeGraph() {
 
     // 스텝별로 차트를 그림
     this.input_step_data = function (data, duration, interval, spec) {
-        this.duration = duration ? duration : 50;
-        this.interval = interval ? interval : 50;
+        duration = duration ? duration : 50;
+        interval = interval ? interval : 50;
         isStep = true;
         isScroll = false;
         txs = [];
@@ -895,7 +1000,7 @@ function nodeGraph() {
         step_queue = new Queue();
         rewind_stack = new Stack();
         removeAllLinkAndTX();
-        clearInterval(this.timer);
+        clearInterval(main_timer);
         var i = 0;
         data.flat().forEach((tx) => {
             tx.index = i++;
@@ -917,7 +1022,7 @@ function nodeGraph() {
                 step_queue.enqueue(tx);
             }
         });
-        this.timer = work_job_onetick(this.duration);
+        main_timer = work_job_onetick(duration);
 
         // 특정 row클릭시 하나 실행후 멈춘다.
         if (spec) {
@@ -926,19 +1031,22 @@ function nodeGraph() {
                 addNodeAndLink(job, true);
                 rewind_stack.push(job);
             }
-            clearInterval(this.timer);
+            clearInterval(main_timer);
         }
     }
 
+    // 실시간으로 들어오는 데이터의 전체 order
     var order = 0;
-    var secondPerDuration = this.duration / 1500;
+    // 한번에 표현할 데이터 갯수를 정하기 위한 초당 duration
+    var secondPerDuration = duration / 1000;
 
-    this.prepare_draw_chart = function (duration, interval, forwordingSecond) {
-        secondPerDuration = forwordingSecond ? this.duration / forwordingSecond : this.duration / 1500;
-        this.duration = duration;
-        this.interval = interval;
+    // 실시간 차트를 그릴 준비 - queue를 모니터링시작 queue의 데이터가 존재할 경우 그리기 시작
+    this.prepare_draw_chart = function () {
+        duration = 25;
+        interval = 25;
+        secondPerDuration = duration / 1000;
         isStep = false;
-        this.timer = setInterval(() => {
+        main_timer = setInterval(() => {
             if (!queue.isEmpty())
                 multiAddNodeAndLinkRemove(queue.dequeue(), true);
         }, duration)
@@ -977,138 +1085,91 @@ function nodeGraph() {
         });
     }
 
-    // coulmn 클릭시
-    function click_column(type, data) {
-        if (isStep) {
-            step_queue = new Queue();
-            if (type === 'tx') {
-                var txData = table_data.get(data.tx);
-                graph.input_step_data(txData, 50, 50, data);
-            } else if (type === 'from') {
-                var nodeData = Array.from(table_data.values()).flat();
-                graph.input_step_data(nodeData, 50, 50, data);
-            } else if (type === 'to') {
-                var nodeData = Array.from(table_data.values()).flat();
-                graph.input_step_data(nodeData, 50, 50, data);
-            } else {
-                var txData = table_data.get(data.tx);
-                graph.input_step_data(txData, 50, 50, data);
-            }
-        } else {
-            backup_data = $.extend({}, store_data);
-            backup_table = new Map(table_data);
-            step_queue = new Queue();
-            step_type = type;
-            if (type === 'tx') {
-                var txData = table_data.get(data.tx);
-                graph.input_step_data(txData, 50, 50);
-            } else if (type === 'from') {
-                var nodeData = []
-                Array.from(all_data.values()).flat().map((v) => {
-                    if (data.from === v.from) nodeData.push(v);
-                });
-                graph.input_step_data(nodeData, 50, 50);
-            } else if (type === 'to') {
-                var nodeData = []
-                Array.from(all_data.values()).flat().map((v) => {
-                    if (data.to === v.to) nodeData.push(v);
-                });
-                graph.input_step_data(nodeData, 50, 50);
-            }
-        }
 
-    }
-
-    // 스텝 그래프에서 리얼 타임 그래프로 넘어갈때 처리
-    function init_real_time() {
-        // 테이블 헤더 원위치
-        Array.from(headers.keys()).forEach((v) => {
-            var value = headers.get(v);
-            value.desc = false;
-            value.asc = false;
-            d3.select('#header_' + v).text(value.text);
-        });
-        tbody.selectAll("tr").remove();
-        step_type = null;
-    }
-
+    // 되감기
     this.rewind = function () {
         if (isStep) {
-            clearInterval(this.timer);
-            this.timer = work_job_rewind(this.duration);
+            clearInterval(main_timer);
+            main_timer = work_job_rewind(duration);
         }
     };
 
+    // step차트에서 실시간차트로 이동
     this.toPrev = function () {
         if (isStep && step_type) {
             init_real_time();
-            store_data = $.extend({}, backup_data);
+            chart_data = $.extend({}, backup_data);
             table_data = new Map(backup_table);
             step_queue = new Queue();
-            lineDuration = this.duration * 4;
-            nodeDuration = this.duration * 2;
+            duration = 25;
+            interval = 25;
+            lineDuration = duration * 4;
+            nodeDuration = duration * 2;
             isScroll = true;
             isStep = false;
-            clearInterval(this.timer);
+            clearInterval(main_timer);
             while (!queue.isEmpty())
                 multiAddNodeAndLinkRemove(queue.dequeue(), false);
 
-            this.timer = setInterval(() => {
+            main_timer = setInterval(() => {
                 if (!queue.isEmpty())
                     multiAddNodeAndLinkRemove(queue.dequeue(), true);
             }, duration);
         }
     }
 
+    // interval만큼 느리게
     this.toSlow = function () {
         if (isStep) {
-            clearInterval(this.timer);
-            this.duration = this.duration + this.interval > 60000 ? 60000 : this.duration + this.interval;
-            // this.timer = work_job_onetick(this.duration);
+            clearInterval(main_timer);
+            duration = duration + interval > 60000 ? 60000 : duration + interval;
+            // main_timer = work_job_onetick(duration);
         }
     }
 
+    // interval만큼 빠르게
     this.toFast = function () {
         if (isStep) {
-            clearInterval(this.timer);
-            this.duration = this.duration - this.interval > 0 ? this.duration - this.interval : this.interval;
-            // this.timer = work_job_onetick(this.duration);
+            clearInterval(main_timer);
+            duration = duration - interval > 25 ? duration - interval : interval;
+            // main_timer = work_job_onetick(duration);
         }
     }
 
     // real시 정지
     this.stop = function () {
-        clearInterval(this.timer);
+        clearInterval(main_timer);
     }
 
     // real시 큐를 날리고 새로운 데이터로 시작
     this.start = function () {
         if (isStep) {
             if (step_queue.isEmpty()) {
-                this.input_step_data(txs, this.duration, this.interval);
+                this.input_step_data(txs, duration, interval);
             } else {
-                clearInterval(this.timer);
-                this.timer = work_job_onetick(this.duration);
+                clearInterval(main_timer);
+                main_timer = work_job_onetick(duration);
             }
         } else {
             // 기존 큐의 데이터를 전부 소비하고 새로 시작함.
-            clearInterval(this.timer);
+            clearInterval(main_timer);
             while (!queue.isEmpty())
                 multiAddNodeAndLinkRemove(queue.dequeue(), false);
 
-            this.timer = setInterval(() => {
+            main_timer = setInterval(() => {
                 if (!queue.isEmpty())
                     multiAddNodeAndLinkRemove(queue.dequeue(), true);
             }, duration);
         }
     }
 
+    // 한스텝씩 진행
     this.stepTick = function () {
-        clearInterval(this.timer);
         if (isStep) {
+            clearInterval(main_timer);
             if (step_queue.isEmpty()) {
                 this.input_step_data(txs);
-                clearInterval(this.timer);
+                clearInterval(main_timer);
             } else {
                 var job = step_queue.dequeue();
                 if (job != null) {
@@ -1118,20 +1179,23 @@ function nodeGraph() {
         }
     }
 
-    this.setAbleLink = (isable) => {
-        ableLink = isable;
-        chart_update(store_data);
+    // 링크 사용안함.
+    this.disableLink = () => {
+        ableLink = false;
+        chart_update(chart_data);
     }
-
+    // 링크 사용함
+    this.ableLink = () => {
+        ableLink = true;
+        chart_update(chart_data);
+    }
+    // 스크롤 멈춤
     this.stopScroll = () => {
         isScroll = false;
     }
-
+    // 스크롤 자동으로 아래로 내림
     this.startScroll = () => {
         isScroll = true;
-    }
-
-    this.getXY = () => {
     }
 
     function randomRange(n1, n2) {

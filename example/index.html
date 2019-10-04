@@ -7,116 +7,13 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     <style>
-        body {
-            overflow: hidden;
-        }
 
-        .node {
-            opacity: 0.5;
-        }
-
-        .node:hover {
-            opacity: 1;
-        }
-
-        .link {
-            stroke: #777;
-            stroke-opacity: 0.3;
-        }
-
-        .tx_dot {
-            height: 5px;
-            width: 2px;
-            fill: black
-        }
-
-        .tooltip {
-            margin: 0;
-        }
-
-        .text {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            font-style: normal;
-            font-weight: 400;
-            line-height: 1.5;
-            text-align: left;
-            text-align: start;
-            text-decoration: none;
-            text-shadow: none;
-            text-transform: none;
-            letter-spacing: normal;
-            word-break: normal;
-            word-spacing: normal;
-            white-space: normal;
-            line-break: auto;
-            font-size: .875rem;
-            word-wrap: break-word;
-        }
-
-        .graph {
-            height: 900px;
-            width: 70%;
-            float: left;
-        }
-
-        .table {
-            width: 30%;
-            float: right;
-        }
-
-        .bodyTable td {
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
-        }
-
-        .bodyTable tr {
-            height: 40px;
-            display: flex;
-            flex: 1;
-            border-bottom: 1px solid green;
-        }
-
-        .selected:hover {
-            background-color: #cccccc;
-        }
-
-        .nonselected td:hover {
-            background-color: grey;
-        }
-
-        .bodyTable td {
-            height: 40px;
-            display: flex;
-            flex: 1;
-            align-items: center;
-            justify-content: center;
-            border: none;
-        }
-
-        /* .bodyTable td:hover {
-            background-color: grey;
-        } */
-
-        .headerTable th {
-            text-align: center;
-            width: 25%;
-        }
-
-        .headerTable th:hover {
-            background-color: grey;
-        }
-
-        .scroll {
-            overflow-y: scroll;
-            border: 1px solid gray;
-        }
     </style>
 </head>
 
 <body>
-    <div class="graph" id="graph"></div>
-    <div class="table" id="table"></div>
+    <div class="node_graph" id="node_graph"></div>
+    <div class="node_table" id="node_table"></div>
     <div style="width: 100%; position: absolute; bottom: 0px; align-items: center; display: flex;">
         <button id="btn_start">시작</button>
         <button id="btn_stop">정지</button>
@@ -135,9 +32,7 @@
     </div>
 
     <script src="http://d3js.org/d3.v3.min.js"></script>
-    <!-- <script src="js/sample.js" charset="utf-8"></script> -->
-    <script src="js/queue.js" charset="utf-8"></script>
-    <script src="js/stack.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="css/nodegraph.css" />
     <script src="js/nodegraph.js" charset="utf-8"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 
@@ -319,11 +214,11 @@
         });
 
         $('#btn_ableLink').on('click', function (e) {
-            graph.setAbleLink(true);
+            graph.ableLink();
         });
 
         $('#btn_disableLink').on('click', function (e) {
-            graph.setAbleLink(false);
+            graph.disableLink();
         });
 
         // <button id="btn_scrollstop">스크롤정지</button>

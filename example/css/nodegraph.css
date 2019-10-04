@@ -1,0 +1,104 @@
+body {
+    overflow: hidden;
+}
+
+.node {
+    opacity: 0.5;
+}
+
+.node:hover {
+    opacity: 1;
+}
+
+.link {
+    stroke: #777;
+    stroke-opacity: 0.3;
+}
+
+.tx_dot {
+    height: 5px;
+    width: 2px;
+    fill: black
+}
+
+.tooltip {
+    margin: 0;
+}
+
+.text {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    text-align: start;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-break: normal;
+    word-spacing: normal;
+    white-space: normal;
+    line-break: auto;
+    font-size: .875rem;
+    word-wrap: break-word;
+}
+
+.node_graph {
+    height: 900px;
+    width: 70%;
+    float: left;
+}
+
+.node_table {
+    width: 30%;
+    float: right;
+}
+
+.bodyTable td {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.bodyTable tr {
+    height: 40px;
+    display: flex;
+    flex: 1;
+    border-bottom: 1px solid green;
+}
+
+.selected:hover {
+    background-color: #cccccc;
+}
+
+.nonselected td:hover {
+    background-color: grey;
+}
+
+.bodyTable td {
+    height: 40px;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    border: none;
+}
+
+/* .bodyTable td:hover {
+    background-color: grey;
+} */
+
+.headerTable th {
+    text-align: center;
+    width: 25%;
+}
+
+.headerTable th:hover {
+    background-color: grey;
+}
+
+.scroll {
+    overflow-y: scroll;
+    border: 1px solid gray;
+}
